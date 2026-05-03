@@ -1,0 +1,115 @@
+@import url('https://fonts.googleapis.com/css2?family=Bangers&family=Permanent+Marker&family=Space+Grotesk:wght@300;400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+@font-face {
+  font-family: 'SmileySans';
+  src: url('/fonts/SmileySans.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@theme {
+  --font-sans: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-comic: 'SmileySans', "Bangers", cursive;
+  --font-marker: "Permanent Marker", cursive;
+  
+  --color-comic-red: #FF2E00;
+  --color-comic-yellow: #FFE500;
+  --color-comic-blue: #00D1FF;
+  --color-zaun-green: #39FF14;
+  --color-zaun-purple: #BF00FF;
+  --color-hextech-gold: #FFB800;
+  --color-paper: #FDFCFA;
+  
+  --shadow-comic: 6px 6px 0px 0px rgba(0, 0, 0, 1);
+  --shadow-comic-lg: 12px 12px 0px 0px rgba(0, 0, 0, 1);
+  --shadow-comic-sm: 3px 3px 0px 0px rgba(0, 0, 0, 1);
+}
+
+@layer base {
+  body {
+    background-color: var(--color-paper);
+    color: #000;
+    font-family: var(--font-sans);
+  }
+}
+
+@utility halftone-bg {
+  background-image: radial-gradient(circle, currentColor 1px, transparent 1.5px);
+  background-size: 6px 6px;
+}
+
+@utility paper-texture {
+  background-image: url("https://www.transparenttextures.com/patterns/handmade-paper.png");
+}
+
+@utility sketched-border {
+  border: 4px solid black;
+  border-radius: 4px;
+}
+
+@utility comic-panel {
+  @apply sketched-border bg-white transition-all overflow-hidden relative;
+  clip-path: polygon(
+    1% 0%, 99% 1%, 100% 4%, 100% 96%, 98% 100%, 2% 99%, 0% 96%, 0% 4%
+  );
+  box-shadow: var(--shadow-comic);
+}
+
+@utility onomatopoeia {
+  @apply font-comic uppercase tracking-wider italic;
+  text-shadow: 3px 3px 0px black;
+  -webkit-text-stroke: 1.5px black;
+}
+
+@utility comic-button {
+  @apply sketched-border bg-comic-yellow px-8 py-3 font-black uppercase text-xl transition-all inline-flex items-center gap-2 cursor-pointer;
+  box-shadow: var(--shadow-comic);
+  &:hover {
+    @apply -translate-x-1 -translate-y-1;
+    box-shadow: var(--shadow-comic-lg);
+  }
+  &:active {
+    @apply translate-x-1 translate-y-1;
+    box-shadow: var(--shadow-comic-sm);
+  }
+}
+
+@utility hextech {
+  @apply bg-hextech-gold text-black border-comic-blue;
+}
+
+@utility zaun {
+  @apply bg-paper text-black;
+  & .zaun-accent {
+    @apply bg-zaun-purple text-zaun-green;
+  }
+}
+
+@utility charm-tag {
+  @apply inline-flex items-center gap-1 bg-white sketched-border px-3 py-1 text-sm font-black uppercase rotate-[-2deg] hover:rotate-0 transition-transform;
+  box-shadow: var(--shadow-comic-sm);
+}
+
+/* Quill Editor Overrides */
+.ql-toolbar.ql-snow {
+  border: none !important;
+  border-bottom: 4px solid black !important;
+  font-family: inherit !important;
+  background-color: #F2F0E9;
+}
+.ql-container.ql-snow {
+  border: none !important;
+  font-family: inherit !important;
+  font-size: 1.125rem !important;
+  flex-grow: 1;
+  overflow-y: auto;
+}
+.ql-editor {
+  min-height: 100%;
+}
+.quill {
+  display: flex;
+  flex-direction: column;
+}
