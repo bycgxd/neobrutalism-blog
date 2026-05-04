@@ -98,8 +98,23 @@ export default function Dashboard() {
     if (file) {
       const formData = new FormData();
       formData.append('file', file);
+      
+      // Determine folder name: use article ID if it exists, otherwise use a temp timestamp
+      const folderName = currentArticle.id ? `article_${currentArticle.id}` : `draft_${Date.now()}`;
+      
       try {
-        const uploadRes = await axios.post('/api/upload', formData, {
+        // Delete old attachment if uploading a new one
+        if (currentArticle.attachmentUrl) {
+          try {
+            await axios.delete(`/api/upload?url=${encodeURIComponent(currentArticle.attachmentUrl)}`, {
+              headers: { Authorization: `Bearer ${token}` }
+            });
+          } catch (delErr) {
+            console.error('Failed to delete old attachment', delErr);
+          }
+        }
+
+        const uploadRes = await axios.post(`/api/upload?folder=${folderName}`, formData, {
           headers: { Authorization: `Bearer ${token}` }
         });
         attachmentUrl = uploadRes.data.url;
@@ -436,14 +451,37 @@ export default function Dashboard() {
                   </div>
                   <div>
                     <label className="block font-black mb-2 uppercase">附件上传</label>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-col gap-2">
                       <input 
                         type="file" 
                         onChange={e => setFile(e.target.files ? e.target.files[0] : null)}
                         className="w-full border-4 border-black p-2 font-bold focus:outline-none"
                       />
                       {currentArticle.attachmentUrl && !file && (
-                        <span className="text-xs font-bold text-comic-blue whitespace-nowrap">已有附件</span>
+                        <div className="flex items-center gap-4 bg-gray-100 p-2 border-2 border-black">
+                          <span className="text-sm font-bold text-comic-blue truncate flex-1">
+                            已有附件: {currentArticle.attachmentUrl.split('/').pop()}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              if (confirm('确定要删除此附件吗？这会立即从服务器删除该文件。')) {
+                                try {
+                                  await axios.delete(`/api/upload?url=${encodeURIComponent(currentArticle.attachmentUrl!)}`, {
+                                    headers: { Authorization: `Bearer ${token}` }
+                                  });
+                                  setCurrentArticle({ ...currentArticle, attachmentUrl: null });
+                                } catch (err) {
+                                  console.error(err);
+                                  alert('删除附件失败');
+                                }
+                              }
+                            }}
+                            className="bg-comic-red text-white px-2 py-1 text-xs font-bold border-2 border-black"
+                          >
+                            删除附件
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>

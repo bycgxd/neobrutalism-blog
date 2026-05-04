@@ -8,7 +8,9 @@ const router = Router();
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const uploadPath = path.join(__dirname, '../../../database/uploads');
+    const folder = (req.query.folder as string) || 'misc';
+    const safeFolder = folder.replace(/[^a-zA-Z0-9_-]/g, '');
+    const uploadPath = path.join(__dirname, '../../../database/uploads', safeFolder);
     if (!fs.existsSync(uploadPath)) {
       fs.mkdirSync(uploadPath, { recursive: true });
     }
@@ -28,9 +30,32 @@ router.post('/', authenticate, upload.single('file'), (req: Request, res: Respon
     return;
   }
   
-  // Return the URL path to access the file
-  const fileUrl = `/uploads/${req.file.filename}`;
+  const folder = (req.query.folder as string) || 'misc';
+  const safeFolder = folder.replace(/[^a-zA-Z0-9_-]/g, '');
+  const fileUrl = `/uploads/${safeFolder}/${req.file.filename}`;
   res.json({ url: fileUrl, filename: req.file.originalname });
+});
+
+router.delete('/', authenticate, (req: Request, res: Response): void => {
+  const fileUrl = req.query.url as string;
+  if (!fileUrl || !fileUrl.startsWith('/uploads/')) {
+    res.status(400).json({ message: 'Invalid URL' });
+    return;
+  }
+  
+  const safeUrl = path.normalize(fileUrl).replace(/^(\.\.[\/\\])+/, '');
+  const filePath = path.join(__dirname, '../../../database', safeUrl);
+  
+  try {
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+      res.json({ message: 'File deleted successfully' });
+    } else {
+      res.status(404).json({ message: 'File not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting file' });
+  }
 });
 
 export default router;
