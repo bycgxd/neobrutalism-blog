@@ -1,14 +1,16 @@
-node_modules/
-.DS_Store
-dist/
-dist-ssr/
-*.local
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/*.local
 
-# Server
-server/node_modules/
-server/dist/
-server/database.sqlite
-server/uploads/
+# Backend
+backend/node_modules/
+backend/dist/
+
+# Database
+database/database.sqlite
+database/uploads/
 
 # Editor directories and files
 .vscode/*
