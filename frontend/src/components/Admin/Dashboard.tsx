@@ -70,7 +70,7 @@ export default function Dashboard() {
 
   const fetchArticles = async () => {
     try {
-      const res = await axios.get('http://localhost:3001/api/articles?admin=true');
+      const res = await axios.get('/api/articles?admin=true');
       setArticles(res.data);
     } catch (err) {
       console.error(err);
@@ -79,7 +79,7 @@ export default function Dashboard() {
 
   const fetchGardenNotes = async () => {
     try {
-      const res = await axios.get('http://localhost:3001/api/garden?admin=true');
+      const res = await axios.get('/api/garden?admin=true');
       setGardenNotes(res.data);
     } catch (err) {
       console.error(err);
@@ -99,7 +99,7 @@ export default function Dashboard() {
       const formData = new FormData();
       formData.append('file', file);
       try {
-        const uploadRes = await axios.post('http://localhost:3001/api/upload', formData, {
+        const uploadRes = await axios.post('/api/upload', formData, {
           headers: { Authorization: `Bearer ${token}` }
         });
         attachmentUrl = uploadRes.data.url;
@@ -114,11 +114,11 @@ export default function Dashboard() {
 
     try {
       if (currentArticle.id) {
-        await axios.put(`http://localhost:3001/api/articles/${currentArticle.id}`, payload, {
+        await axios.put(`/api/articles/${currentArticle.id}`, payload, {
           headers: { Authorization: `Bearer ${token}` }
         });
       } else {
-        await axios.post('http://localhost:3001/api/articles', payload, {
+        await axios.post('/api/articles', payload, {
           headers: { Authorization: `Bearer ${token}` }
         });
       }
@@ -137,11 +137,11 @@ export default function Dashboard() {
     
     try {
       if (currentGardenNote.id) {
-        await axios.put(`http://localhost:3001/api/garden/${currentGardenNote.id}`, currentGardenNote, {
+        await axios.put(`/api/garden/${currentGardenNote.id}`, currentGardenNote, {
           headers: { Authorization: `Bearer ${token}` }
         });
       } else {
-        await axios.post('http://localhost:3001/api/garden', currentGardenNote, {
+        await axios.post('/api/garden', currentGardenNote, {
           headers: { Authorization: `Bearer ${token}` }
         });
       }
@@ -158,10 +158,10 @@ export default function Dashboard() {
     if (!confirm('确定删除吗？')) return;
     try {
       if (activeTab === 'articles') {
-        await axios.delete(`http://localhost:3001/api/articles/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+        await axios.delete(`/api/articles/${id}`, { headers: { Authorization: `Bearer ${token}` } });
         fetchArticles();
       } else {
-        await axios.delete(`http://localhost:3001/api/garden/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+        await axios.delete(`/api/garden/${id}`, { headers: { Authorization: `Bearer ${token}` } });
         fetchGardenNotes();
       }
     } catch (err) {
@@ -173,10 +173,10 @@ export default function Dashboard() {
   const toggleVisibility = async (id: number) => {
     try {
       if (activeTab === 'articles') {
-        await axios.patch(`http://localhost:3001/api/articles/${id}/toggle-visibility`, {}, { headers: { Authorization: `Bearer ${token}` } });
+        await axios.patch(`/api/articles/${id}/toggle-visibility`, {}, { headers: { Authorization: `Bearer ${token}` } });
         fetchArticles();
       } else {
-        await axios.patch(`http://localhost:3001/api/garden/${id}/toggle-visibility`, {}, { headers: { Authorization: `Bearer ${token}` } });
+        await axios.patch(`/api/garden/${id}/toggle-visibility`, {}, { headers: { Authorization: `Bearer ${token}` } });
         fetchGardenNotes();
       }
     } catch (err) {

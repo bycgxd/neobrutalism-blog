@@ -39,7 +39,7 @@ export default function IndustryNews() {
   useEffect(() => {
     const fetchArticles = async () => {
       try {
-        const res = await axios.get('http://localhost:3001/api/articles');
+        const res = await axios.get('/api/articles');
         // Assign a random or sequential color to each article for UI styling
         const data = res.data.map((item: Article, index: number) => ({
           ...item,
@@ -260,7 +260,7 @@ export default function IndustryNews() {
                         </div>
                       </div>
                       <a 
-                        href={`http://localhost:3001${selectedArticle.attachmentUrl}`}
+                        href={selectedArticle.attachmentUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="comic-button bg-comic-blue text-white whitespace-nowrap"

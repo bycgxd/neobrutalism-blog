@@ -11,15 +11,15 @@ export default function Login() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await axios.post('http://localhost:3001/api/auth/login', { username, password });
+      const res = await axios.post('/api/auth/login', { username, password });
       localStorage.setItem('adminToken', res.data.token);
       navigate('/admin/dashboard');
     } catch (err: any) {
       if (err.response?.status === 401) {
         // Try to setup if no admin exists (for demo purposes)
         try {
-          await axios.post('http://localhost:3001/api/auth/setup', { username, password });
-          const res = await axios.post('http://localhost:3001/api/auth/login', { username, password });
+          await axios.post('/api/auth/setup', { username, password });
+          const res = await axios.post('/api/auth/login', { username, password });
           localStorage.setItem('adminToken', res.data.token);
           navigate('/admin/dashboard');
           return;

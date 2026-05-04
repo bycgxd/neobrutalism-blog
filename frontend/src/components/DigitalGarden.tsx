@@ -33,7 +33,7 @@ export default function DigitalGarden() {
   useEffect(() => {
     const fetchNotes = async () => {
       try {
-        const res = await axios.get('http://localhost:3001/api/garden');
+        const res = await axios.get('/api/garden');
         const data = res.data.map((item: GardenNote, index: number) => ({
           ...item,
           color: colors[index % colors.length]
