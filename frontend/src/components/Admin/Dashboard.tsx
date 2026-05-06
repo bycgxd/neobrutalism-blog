@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Edit2, Trash2, LogOut, Eye, EyeOff, Paperclip, LayoutDashboard, Sprout, CheckSquare, Square, BarChart3 } from 'lucide-react';
+import { Plus, Edit2, Trash2, LogOut, Eye, EyeOff, Paperclip, LayoutDashboard, Sprout, CheckSquare, Square, BarChart3, Upload } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/src/lib/utils';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 import Analytics from './Analytics';
+import BulkImport from './BulkImport';
 
 interface Article {
   id: number;
@@ -63,6 +64,7 @@ export default function Dashboard() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [showBulkImport, setShowBulkImport] = useState(false);
 
   const navigate = useNavigate();
   const token = localStorage.getItem('adminToken');
@@ -457,9 +459,16 @@ export default function Dashboard() {
                   {activeTab === 'articles' ? '行业资讯管理' : '数字花园管理'}
                 </h2>
               </div>
-              <button onClick={() => openEditor()} className="comic-button bg-comic-blue text-white flex items-center gap-2">
-                <Plus className="w-5 h-5" /> 新增{activeTab === 'articles' ? '文章' : '笔记'}
-              </button>
+              <div className="flex gap-2">
+                {activeTab === 'articles' && (
+                  <button onClick={() => setShowBulkImport(true)} className="comic-button bg-comic-yellow text-black flex items-center gap-2">
+                    <Upload className="w-5 h-5" /> 一键导入
+                  </button>
+                )}
+                <button onClick={() => openEditor()} className="comic-button bg-comic-blue text-white flex items-center gap-2">
+                  <Plus className="w-5 h-5" /> 新增{activeTab === 'articles' ? '文章' : '笔记'}
+                </button>
+              </div>
             </div>
 
             <AnimatePresence>
@@ -860,6 +869,12 @@ export default function Dashboard() {
           </div>
         )}
       </AnimatePresence>
+
+      <BulkImport
+        open={showBulkImport}
+        onClose={() => setShowBulkImport(false)}
+        onSaved={() => { fetchArticles(); }}
+      />
     </div>
   );
 }

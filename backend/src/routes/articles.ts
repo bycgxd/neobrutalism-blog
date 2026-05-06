@@ -1,9 +1,80 @@
 import { Router, Request, Response } from 'express';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 import { Op } from 'sequelize';
 import Article from '../models/Article';
 import { authenticate } from '../middlewares/auth';
 
 const router = Router();
+
+const jsonUpload = multer({
+  storage: multer.diskStorage({
+    destination: (_req, _file, cb) => {
+      const tmpDir = path.join(__dirname, '../../tmp');
+      if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true });
+      cb(null, tmpDir);
+    },
+    filename: (_req, file, cb) => {
+      cb(null, Date.now() + '-' + file.originalname);
+    },
+  }),
+  fileFilter: (_req, file, cb) => {
+    if (file.mimetype === 'application/json' || file.originalname.endsWith('.json')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only JSON files are allowed'));
+    }
+  },
+});
+
+function formatForQuill(str: string): string {
+  if (!str) return '';
+  return str.split('\n').map(p => p ? `<p>${p}</p>` : '<p><br></p>').join('');
+}
+
+router.post('/bulk-import', authenticate, jsonUpload.array('files', 50), async (req: Request, res: Response): Promise<void> => {
+  try {
+    const files = req.files as Express.Multer.File[];
+    if (!files || files.length === 0) {
+      res.status(400).json({ message: 'No files uploaded' });
+      return;
+    }
+
+    const results: { filename: string; success: boolean; title?: string; id?: number; error?: string }[] = [];
+
+    for (const file of files) {
+      try {
+        let text = fs.readFileSync(file.path, 'utf-8');
+        if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+
+        let json = JSON.parse(text);
+        if (Array.isArray(json)) json = json[0];
+
+        const article = await Article.create({
+          title: json.title || json.name || '未命名',
+          summary: json.summary || json.desc || '',
+          content: formatForQuill(json.content || json.text || ''),
+          date: json.publish_date || json.date || new Date().toISOString().split('T')[0],
+          category: json.tags || json.category || '行业动态',
+          aiAnalysis: formatForQuill(json.ai_analysis || json.aiAnalysis || ''),
+          sourceUrl: json.original_url || json.sourceUrl || json.source_url || json.url || '',
+          isHidden: false,
+        });
+
+        results.push({ filename: file.originalname, success: true, title: article.title, id: article.id });
+      } catch (err: any) {
+        results.push({ filename: file.originalname, success: false, error: err.message || '解析失败' });
+      } finally {
+        try { fs.unlinkSync(file.path); } catch {}
+      }
+    }
+
+    res.json({ results });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
 
 // Get all articles (public, only visible ones unless authenticated)
 router.get('/', async (req: Request, res: Response): Promise<void> => {
