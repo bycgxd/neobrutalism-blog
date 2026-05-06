@@ -40,12 +40,8 @@ export default function ArticlesView() {
   useEffect(() => {
     const fetchArticles = async () => {
       try {
-        let categoryParam = '';
-        if (activeTab === 'news') categoryParam = '&category=资讯';
-        if (activeTab === 'policies') categoryParam = '&category=政策';
-        
         const searchParam = searchQuery ? `&search=${encodeURIComponent(searchQuery)}` : '';
-        const res = await axios.get(`/api/articles?${categoryParam}${searchParam}`);
+        const res = await axios.get(`/api/articles?${searchParam}`);
         
         const data = res.data.map((item: Article, index: number) => ({
           ...item,
@@ -62,18 +58,26 @@ export default function ArticlesView() {
     }, 300);
 
     return () => clearTimeout(delayDebounceFn);
-  }, [activeTab, searchQuery]);
+  }, [searchQuery]);
 
-  // Sorting logic (filtering is now done on backend)
+  // Sorting logic (filtering is now done on frontend for tabs)
   const filteredAndSortedArticles = useMemo(() => {
-    let result = [...articles];
+    let result = articles;
+    
+    if (activeTab === 'news') {
+      result = result.filter(a => a.category?.includes('资讯'));
+    } else if (activeTab === 'policies') {
+      result = result.filter(a => a.category?.includes('政策'));
+    }
+
+    result = [...result];
     result.sort((a, b) => {
       const dateA = new Date(a.date).getTime();
       const dateB = new Date(b.date).getTime();
       return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
     });
     return result;
-  }, [articles, sortOrder]);
+  }, [articles, sortOrder, activeTab]);
 
   return (
     <section id="articles" className="py-24 px-6 bg-paper border-y-8 border-black relative overflow-hidden min-h-screen">

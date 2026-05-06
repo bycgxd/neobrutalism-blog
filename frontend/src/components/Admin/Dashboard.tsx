@@ -40,8 +40,9 @@ const quillModules = {
 };
 
 export default function Dashboard() {
-  const [activeTab, setActiveTab] = useState<'news' | 'policies' | 'garden'>('news');
+  const [activeTab, setActiveTab] = useState<'articles' | 'garden'>('articles');
   const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<'all' | '资讯' | '政策'>('all');
   
   const [articles, setArticles] = useState<Article[]>([]);
   const [gardenNotes, setGardenNotes] = useState<GardenNote[]>([]);
@@ -62,18 +63,16 @@ export default function Dashboard() {
       navigate('/admin');
       return;
     }
-    if (activeTab === 'news' || activeTab === 'policies') {
+    if (activeTab === 'articles') {
       fetchArticles();
     } else {
       fetchGardenNotes();
     }
-  }, [token, navigate, activeTab, searchQuery]);
+  }, [token, navigate, activeTab]);
 
   const fetchArticles = async () => {
     try {
-      const category = activeTab === 'news' ? '资讯' : '政策';
-      const searchParam = searchQuery ? `&search=${encodeURIComponent(searchQuery)}` : '';
-      const res = await axios.get(`/api/articles?admin=true&category=${encodeURIComponent(category)}${searchParam}`);
+      const res = await axios.get('/api/articles?admin=true');
       setArticles(res.data);
     } catch (err) {
       console.error(err);
@@ -88,6 +87,13 @@ export default function Dashboard() {
       console.error(err);
     }
   };
+
+  const filteredArticles = articles.filter(article => {
+    const matchesSearch = article.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          article.summary.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = categoryFilter === 'all' || article.category === categoryFilter;
+    return matchesSearch && matchesCategory;
+  });
 
   const handleLogout = () => {
     localStorage.removeItem('adminToken');
@@ -175,7 +181,7 @@ export default function Dashboard() {
   const handleDelete = async (id: number) => {
     if (!confirm('确定删除吗？')) return;
     try {
-      if (activeTab === 'news' || activeTab === 'policies') {
+      if (activeTab === 'articles') {
         await axios.delete(`/api/articles/${id}`, { headers: { Authorization: `Bearer ${token}` } });
         fetchArticles();
       } else {
@@ -190,7 +196,7 @@ export default function Dashboard() {
 
   const toggleVisibility = async (id: number) => {
     try {
-      if (activeTab === 'news' || activeTab === 'policies') {
+      if (activeTab === 'articles') {
         await axios.patch(`/api/articles/${id}/toggle-visibility`, {}, { headers: { Authorization: `Bearer ${token}` } });
         fetchArticles();
       } else {
@@ -204,7 +210,7 @@ export default function Dashboard() {
   };
 
   const openEditor = (item?: any) => {
-    if (activeTab === 'news' || activeTab === 'policies') {
+    if (activeTab === 'articles') {
       if (item) {
         setCurrentArticle(item);
       } else {
@@ -213,7 +219,7 @@ export default function Dashboard() {
           summary: '',
           content: '',
           date: new Date().toISOString().split('T')[0],
-          category: activeTab === 'news' ? '资讯' : '政策',
+          category: '行业动态',
           sourceUrl: '',
           isHidden: false
         });
@@ -274,11 +280,11 @@ export default function Dashboard() {
 
         console.log("Mapped Data:", mappedData);
 
-        if (activeTab === 'news' || activeTab === 'policies') {
+        if (activeTab === 'articles') {
           setCurrentArticle(prev => ({ 
             ...prev, 
             ...mappedData,
-            category: mappedData.tags || prev.category || (activeTab === 'news' ? '资讯' : '政策')
+            category: mappedData.tags || prev.category || '行业动态'
           }));
         } else {
           setCurrentGardenNote(prev => ({ 
@@ -311,16 +317,10 @@ export default function Dashboard() {
           
           <div className="flex gap-4">
             <button 
-              onClick={() => { setActiveTab('news'); setIsEditing(false); }}
-              className={cn("comic-button flex items-center gap-2", activeTab === 'news' ? "bg-comic-yellow text-black" : "bg-white text-black")}
+              onClick={() => { setActiveTab('articles'); setIsEditing(false); }}
+              className={cn("comic-button flex items-center gap-2", activeTab === 'articles' ? "bg-comic-yellow text-black" : "bg-white text-black")}
             >
-              <LayoutDashboard className="w-5 h-5" /> 资讯管理
-            </button>
-            <button 
-              onClick={() => { setActiveTab('policies'); setIsEditing(false); }}
-              className={cn("comic-button flex items-center gap-2", activeTab === 'policies' ? "bg-comic-blue text-white" : "bg-white text-black")}
-            >
-              <LayoutDashboard className="w-5 h-5" /> 政策管理
+              <LayoutDashboard className="w-5 h-5" /> 行业资讯管理
             </button>
             <button 
               onClick={() => { setActiveTab('garden'); setIsEditing(false); }}
@@ -335,11 +335,31 @@ export default function Dashboard() {
           </button>
         </div>
 
-        {!isEditing && (activeTab === 'news' || activeTab === 'policies') && (
-          <div className="mb-6 flex">
+        {!isEditing && activeTab === 'articles' && (
+          <div className="mb-6 flex flex-col md:flex-row gap-4">
+            <div className="flex gap-2">
+              <button 
+                onClick={() => setCategoryFilter('all')}
+                className={cn("px-4 py-2 border-4 border-black font-black uppercase transition-transform", categoryFilter === 'all' ? "bg-comic-blue text-white translate-y-1" : "bg-white text-black hover:-translate-y-1")}
+              >
+                全部
+              </button>
+              <button 
+                onClick={() => setCategoryFilter('资讯')}
+                className={cn("px-4 py-2 border-4 border-black font-black uppercase transition-transform", categoryFilter === '资讯' ? "bg-comic-yellow text-black translate-y-1" : "bg-white text-black hover:-translate-y-1")}
+              >
+                资讯
+              </button>
+              <button 
+                onClick={() => setCategoryFilter('政策')}
+                className={cn("px-4 py-2 border-4 border-black font-black uppercase transition-transform", categoryFilter === '政策' ? "bg-zaun-green text-black translate-y-1" : "bg-white text-black hover:-translate-y-1")}
+              >
+                政策
+              </button>
+            </div>
             <input 
               type="text"
-              placeholder={`搜索${activeTab === 'news' ? '资讯' : '政策'}...`}
+              placeholder="搜索标题或简介..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               className="flex-1 border-4 border-black p-3 font-bold focus:outline-none focus:ring-4 focus:ring-comic-blue"
@@ -351,22 +371,24 @@ export default function Dashboard() {
           <div className="comic-panel bg-white p-8">
             <div className="flex justify-between items-center mb-8 border-b-4 border-black pb-4">
               <h2 className="text-3xl font-black">
-                {activeTab === 'news' ? '资讯管理' : activeTab === 'policies' ? '政策管理' : '数字花园管理'}
+                {activeTab === 'articles' ? '行业资讯管理' : '数字花园管理'}
               </h2>
               <button onClick={() => openEditor()} className="comic-button bg-comic-blue text-white flex items-center gap-2">
-                <Plus className="w-5 h-5" /> 新增{activeTab === 'garden' ? '笔记' : '文章'}
+                <Plus className="w-5 h-5" /> 新增{activeTab === 'articles' ? '文章' : '笔记'}
               </button>
             </div>
 
             <div className="space-y-4">
-              {(activeTab === 'garden' ? gardenNotes : articles).map((item: any) => (
+              {(activeTab === 'articles' ? filteredArticles : gardenNotes).map((item: any) => (
                 <div key={item.id} className={cn("border-4 border-black p-4 flex items-center justify-between transition-colors", item.isHidden ? "bg-gray-200" : "bg-white hover:bg-comic-yellow/10")}>
                   <div>
                     <h3 className={cn("text-xl font-bold", item.isHidden && "line-through text-gray-500")}>
                       {item.title}
                     </h3>
                     <div className="flex items-center gap-4 mt-2 text-sm font-black text-gray-600">
-                      <span className="bg-black text-white px-2">{activeTab === 'garden' ? item.tags : item.category}</span>
+                      <span className={cn("text-white px-2", activeTab === 'articles' && item.category === '政策' ? 'bg-zaun-green' : 'bg-black')}>
+                        {activeTab === 'articles' ? item.category : item.tags}
+                      </span>
                       <span>{item.date}</span>
                     </div>
                   </div>
@@ -394,7 +416,7 @@ export default function Dashboard() {
                   </div>
                 </div>
               ))}
-              {(activeTab === 'garden' ? gardenNotes : articles).length === 0 && (
+              {(activeTab === 'articles' ? filteredArticles : gardenNotes).length === 0 && (
                 <div className="text-center py-10 font-bold text-xl text-gray-500">
                   暂无内容，请点击右上角新增
                 </div>
@@ -405,7 +427,7 @@ export default function Dashboard() {
           <div className="comic-panel bg-white p-8">
             <div className="flex justify-between items-center mb-8 border-b-4 border-black pb-4">
               <h2 className="text-3xl font-black">
-                {activeTab === 'news' || activeTab === 'policies'
+                {activeTab === 'articles' 
                   ? (currentArticle.id ? '编辑文章' : '新增文章') 
                   : (currentGardenNote.id ? '编辑笔记' : '新增笔记')}
               </h2>
@@ -427,7 +449,7 @@ export default function Dashboard() {
               </div>
             </div>
             
-            {activeTab === 'news' || activeTab === 'policies' ? (
+            {activeTab === 'articles' ? (
               <form onSubmit={handleArticleSave} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
@@ -442,13 +464,15 @@ export default function Dashboard() {
                   </div>
                   <div>
                     <label className="block font-black mb-2 uppercase">分类标签</label>
-                    <input 
-                      type="text" 
-                      value={currentArticle.category || ''}
+                    <select
+                      value={currentArticle.category || '资讯'}
                       onChange={e => setCurrentArticle({...currentArticle, category: e.target.value})}
-                      className="w-full border-4 border-black p-3 font-bold focus:outline-none focus:ring-4 focus:ring-comic-blue"
+                      className="w-full border-4 border-black p-3 font-bold focus:outline-none focus:ring-4 focus:ring-comic-blue bg-white"
                       required
-                    />
+                    >
+                      <option value="资讯">资讯</option>
+                      <option value="政策">政策</option>
+                    </select>
                   </div>
                   <div>
                     <label className="block font-black mb-2 uppercase">发布时间</label>
