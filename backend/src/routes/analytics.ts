@@ -6,15 +6,6 @@ import { authenticate, AuthRequest } from '../middlewares/auth';
 
 const router = Router();
 
-function maskIP(ip: string): string {
-  const parts = ip.split('.');
-  if (parts.length === 4) {
-    parts[3] = 'xxx';
-    return parts.join('.');
-  }
-  return ip.length > 5 ? ip.slice(0, -5) + 'xxxxx' : ip;
-}
-
 router.get('/summary', authenticate, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const startOfToday = new Date();
@@ -82,7 +73,7 @@ router.get('/recent', authenticate, async (req: AuthRequest, res: Response): Pro
 
     const result = views.map((v: any) => ({
       id: v.id,
-      ip: maskIP(v.ip),
+      ip: v.ip,
       country: v.country,
       city: v.city,
       page: v.page,
