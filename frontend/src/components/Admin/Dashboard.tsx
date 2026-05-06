@@ -59,7 +59,8 @@ export default function Dashboard() {
   const [currentArticle, setCurrentArticle] = useState<Partial<Article>>({});
   const [currentGardenNote, setCurrentGardenNote] = useState<Partial<GardenNote>>({});
   const [file, setFile] = useState<File | null>(null);
-  
+  const [uploadProgress, setUploadProgress] = useState(-1); // -1: idle, 0-100: uploading
+
   const [importError, setImportError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -191,12 +192,17 @@ export default function Dashboard() {
           }
         }
 
+        setUploadProgress(0);
         const uploadRes = await axios.post(`/api/upload?folder=${folderName}`, formData, {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
+          onUploadProgress: (e) => {
+            if (e.total) setUploadProgress(Math.round((e.loaded * 100) / e.total));
+          },
         });
         attachmentUrl = uploadRes.data.url;
       } catch (err) {
         console.error('File upload failed', err);
+        setUploadProgress(-1);
         alert('文件上传失败');
         return;
       }
@@ -217,9 +223,11 @@ export default function Dashboard() {
       setIsEditing(false);
       setFile(null);
       setCurrentArticle({});
+      setUploadProgress(-1);
       fetchArticles();
     } catch (err) {
       console.error(err);
+      setUploadProgress(-1);
       alert('保存失败');
     }
   };
@@ -767,11 +775,27 @@ export default function Dashboard() {
                   />
                 </div>
 
+                {uploadProgress >= 0 && (
+                  <div className="border-4 border-black p-4 bg-white">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-black text-sm uppercase">正在上传附件...</span>
+                      <span className="font-comic text-xl">{uploadProgress}%</span>
+                    </div>
+                    <div className="border-2 border-black h-6 bg-gray-200">
+                      <motion.div
+                        className="h-full bg-comic-blue"
+                        animate={{ width: `${uploadProgress}%` }}
+                        transition={{ duration: 0.15 }}
+                      />
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex justify-end gap-4 pt-6 border-t-4 border-black">
-                  <button type="button" onClick={() => setIsEditing(false)} className="comic-button bg-gray-300 text-black">
+                  <button type="button" onClick={() => { setIsEditing(false); setUploadProgress(-1); }} className="comic-button bg-gray-300 text-black">
                     取消
                   </button>
-                  <button type="submit" className="comic-button bg-comic-green text-black">
+                  <button type="submit" className="comic-button bg-comic-green text-black" disabled={uploadProgress >= 0}>
                     保存文章
                   </button>
                 </div>
