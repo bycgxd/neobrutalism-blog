@@ -8,11 +8,26 @@ const router = Router();
 router.get('/', async (req: Request, res: Response): Promise<void> => {
   try {
     const isAdmin = req.query.admin === 'true';
+    const page = parseInt(req.query.page as string) || 0;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const order = (req.query.order as string) === 'asc' ? 'ASC' : 'DESC';
     const whereClause = isAdmin ? {} : { isHidden: false };
-    
+
+    if (page > 0) {
+      const total = await GardenNote.count({ where: whereClause });
+      const notes = await GardenNote.findAll({
+        where: whereClause,
+        order: [['date', order]],
+        limit,
+        offset: (page - 1) * limit,
+      });
+      res.json({ notes, total, page, totalPages: Math.ceil(total / limit) });
+      return;
+    }
+
     const notes = await GardenNote.findAll({
       where: whereClause,
-      order: [['date', 'DESC']],
+      order: [['date', order]],
     });
     res.json(notes);
   } catch (error) {

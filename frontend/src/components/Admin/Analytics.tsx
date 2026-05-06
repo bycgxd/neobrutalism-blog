@@ -42,6 +42,9 @@ export default function Analytics() {
   const [articles, setArticles] = useState<ArticleStat[]>([]);
   const [recent, setRecent] = useState<RecentVisitor[]>([]);
   const [loading, setLoading] = useState(true);
+  const [recentPage, setRecentPage] = useState(1);
+  const [recentTotalPages, setRecentTotalPages] = useState(1);
+  const [recentJump, setRecentJump] = useState('');
 
   const token = localStorage.getItem('adminToken');
 
@@ -49,16 +52,14 @@ export default function Analytics() {
     setLoading(true);
     try {
       const headers = { Authorization: `Bearer ${token}` };
-      const [summaryRes, pagesRes, articlesRes, recentRes] = await Promise.all([
+      const [summaryRes, pagesRes, articlesRes] = await Promise.all([
         axios.get('/api/analytics/summary', { headers }),
         axios.get('/api/analytics/pages', { headers }),
         axios.get('/api/analytics/articles', { headers }),
-        axios.get('/api/analytics/recent', { headers }),
       ]);
       setSummary(summaryRes.data);
       setPages(pagesRes.data);
       setArticles(articlesRes.data);
-      setRecent(recentRes.data);
     } catch (err) {
       console.error('Failed to fetch analytics', err);
     } finally {
@@ -66,7 +67,25 @@ export default function Analytics() {
     }
   };
 
+  const fetchRecent = async () => {
+    try {
+      const headers = { Authorization: `Bearer ${token}` };
+      const res = await axios.get(`/api/analytics/recent?page=${recentPage}&limit=20`, { headers });
+      const data = res.data;
+      if (data.visitors) {
+        setRecent(data.visitors);
+        setRecentTotalPages(data.totalPages);
+      } else {
+        setRecent(data);
+        setRecentTotalPages(1);
+      }
+    } catch (err) {
+      console.error('Failed to fetch recent visitors', err);
+    }
+  };
+
   useEffect(() => { fetchData(); }, []);
+  useEffect(() => { fetchRecent(); }, [recentPage]);
 
   const statCards = summary ? [
     { label: '总访问量', value: summary.totalViews, icon: Eye, color: 'bg-comic-blue' },
@@ -103,7 +122,7 @@ export default function Analytics() {
           </button>
         ))}
         <button
-          onClick={fetchData}
+          onClick={() => { fetchData(); setRecentPage(1); }}
           className="ml-auto px-4 py-2 border-4 border-black font-black uppercase bg-comic-blue text-white hover:-translate-y-1 transition-transform"
         >
           刷新
@@ -208,6 +227,63 @@ export default function Analytics() {
                         ))}
                       </tbody>
                     </table>
+                  </div>
+                )}
+
+                {recentTotalPages > 1 && (
+                  <div className="mt-4 flex items-center justify-center gap-2 flex-wrap border-t-2 border-black pt-4">
+                    <button
+                      onClick={() => setRecentPage(p => Math.max(1, p - 1))}
+                      disabled={recentPage === 1}
+                      className="px-3 py-1 border-2 border-black font-black text-sm disabled:opacity-30 bg-white"
+                    >
+                      上一页
+                    </button>
+                    {Array.from({ length: recentTotalPages }, (_, i) => i + 1)
+                      .filter(p => p === 1 || p === recentTotalPages || Math.abs(p - recentPage) <= 1)
+                      .reduce<(number | 'e')[]>((acc, p, idx, arr) => {
+                        if (idx > 0 && p - (arr[idx - 1] as number) > 1) acc.push('e');
+                        acc.push(p);
+                        return acc;
+                      }, [])
+                      .map((item, i) =>
+                        item === 'e' ? <span key={`e-${i}`} className="font-black px-1">...</span> : (
+                          <button
+                            key={item}
+                            onClick={() => setRecentPage(item)}
+                            className={cn(
+                              "w-8 h-8 border-2 border-black font-black text-sm transition-transform",
+                              recentPage === item ? "bg-black text-white translate-y-1" : "bg-white hover:-translate-y-1"
+                            )}
+                          >
+                            {item}
+                          </button>
+                        )
+                      )}
+                    <button
+                      onClick={() => setRecentPage(p => Math.min(recentTotalPages, p + 1))}
+                      disabled={recentPage === recentTotalPages}
+                      className="px-3 py-1 border-2 border-black font-black text-sm disabled:opacity-30 bg-white"
+                    >
+                      下一页
+                    </button>
+                    <div className="flex items-center gap-1 ml-2">
+                      <input
+                        type="number"
+                        min={1}
+                        max={recentTotalPages}
+                        value={recentJump}
+                        onChange={e => setRecentJump(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') {
+                            const p = parseInt(recentJump);
+                            if (p >= 1 && p <= recentTotalPages) { setRecentPage(p); setRecentJump(''); }
+                          }
+                        }}
+                        placeholder="页码"
+                        className="w-12 border-2 border-black p-1 font-bold text-center text-xs focus:outline-none"
+                      />
+                    </div>
                   </div>
                 )}
               </div>

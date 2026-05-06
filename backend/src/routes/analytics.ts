@@ -66,9 +66,13 @@ router.get('/articles', authenticate, async (req: AuthRequest, res: Response): P
 
 router.get('/recent', authenticate, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const total = await PageView.count();
     const views = await PageView.findAll({
       order: [['createdAt', 'DESC']],
-      limit: 50,
+      limit,
+      offset: (page - 1) * limit,
     });
 
     const result = views.map((v: any) => ({
@@ -81,7 +85,7 @@ router.get('/recent', authenticate, async (req: AuthRequest, res: Response): Pro
       createdAt: v.createdAt,
     }));
 
-    res.json(result);
+    res.json({ visitors: result, total, page, totalPages: Math.ceil(total / limit) });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }

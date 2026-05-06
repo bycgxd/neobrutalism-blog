@@ -47,7 +47,13 @@ export default function Dashboard() {
   
   const [articles, setArticles] = useState<Article[]>([]);
   const [gardenNotes, setGardenNotes] = useState<GardenNote[]>([]);
-  
+
+  const [articlePage, setArticlePage] = useState(1);
+  const [articleTotalPages, setArticleTotalPages] = useState(1);
+  const [gardenPage, setGardenPage] = useState(1);
+  const [gardenTotalPages, setGardenTotalPages] = useState(1);
+  const [jumpInput, setJumpInput] = useState('');
+
   const [isEditing, setIsEditing] = useState(false);
   const [currentArticle, setCurrentArticle] = useState<Partial<Article>>({});
   const [currentGardenNote, setCurrentGardenNote] = useState<Partial<GardenNote>>({});
@@ -71,12 +77,25 @@ export default function Dashboard() {
     } else if (activeTab === 'garden') {
       fetchGardenNotes();
     }
-  }, [token, navigate, activeTab]);
+  }, [token, navigate, activeTab, articlePage, gardenPage, searchQuery, categoryFilter]);
 
   const fetchArticles = async () => {
     try {
-      const res = await axios.get('/api/articles?admin=true');
-      setArticles(res.data);
+      const params = new URLSearchParams();
+      params.set('admin', 'true');
+      params.set('page', String(articlePage));
+      params.set('limit', '10');
+      if (searchQuery) params.set('search', searchQuery);
+      if (categoryFilter === '资讯' || categoryFilter === '政策') params.set('category', categoryFilter);
+      const res = await axios.get(`/api/articles?${params.toString()}`);
+      const data = res.data;
+      if (data.articles) {
+        setArticles(data.articles);
+        setArticleTotalPages(data.totalPages);
+      } else {
+        setArticles(data);
+        setArticleTotalPages(1);
+      }
     } catch (err) {
       console.error(err);
     }
@@ -84,26 +103,21 @@ export default function Dashboard() {
 
   const fetchGardenNotes = async () => {
     try {
-      const res = await axios.get('/api/garden?admin=true');
-      setGardenNotes(res.data);
+      const res = await axios.get(`/api/garden?admin=true&page=${gardenPage}&limit=10`);
+      const data = res.data;
+      if (data.notes) {
+        setGardenNotes(data.notes);
+        setGardenTotalPages(data.totalPages);
+      } else {
+        setGardenNotes(data);
+        setGardenTotalPages(1);
+      }
     } catch (err) {
       console.error(err);
     }
   };
 
-  const filteredArticles = articles.filter(article => {
-    const matchesSearch = !searchQuery || 
-                          (article.title && article.title.toLowerCase().includes(searchQuery.toLowerCase())) || 
-                          (article.summary && article.summary.toLowerCase().includes(searchQuery.toLowerCase()));
-    
-    // Check if category includes '资讯' or '政策' to support tags that might have extra text
-    const matchesCategory = categoryFilter === 'all' || 
-                            (article.category && article.category.includes(categoryFilter));
-                            
-    return matchesSearch && matchesCategory;
-  });
-
-  const currentList: any[] = activeTab === 'articles' ? filteredArticles : gardenNotes;
+  const currentList: any[] = activeTab === 'articles' ? articles : gardenNotes;
   const allIds = currentList.map(item => item.id);
 
   const toggleSelect = (id: number) => {
@@ -369,13 +383,13 @@ export default function Dashboard() {
           
           <div className="flex gap-4">
             <button 
-              onClick={() => { setActiveTab('articles'); setIsEditing(false); }}
+              onClick={() => { setActiveTab('articles'); setIsEditing(false); setArticlePage(1); }}
               className={cn("comic-button flex items-center gap-2", activeTab === 'articles' ? "bg-comic-yellow text-black" : "bg-white text-black")}
             >
               <LayoutDashboard className="w-5 h-5" /> 行业资讯管理
             </button>
-            <button 
-              onClick={() => { setActiveTab('garden'); setIsEditing(false); }}
+            <button
+              onClick={() => { setActiveTab('garden'); setIsEditing(false); setGardenPage(1); }}
               className={cn("comic-button flex items-center gap-2", activeTab === 'garden' ? "bg-zaun-green text-black" : "bg-white text-black")}
             >
               <Sprout className="w-5 h-5" /> 数字花园管理
@@ -397,19 +411,19 @@ export default function Dashboard() {
           <div className="mb-6 flex flex-col md:flex-row gap-4">
             <div className="flex gap-2">
               <button 
-                onClick={() => setCategoryFilter('all')}
+                onClick={() => { setCategoryFilter('all'); setArticlePage(1); }}
                 className={cn("px-4 py-2 border-4 border-black font-black uppercase transition-transform", categoryFilter === 'all' ? "bg-comic-blue text-white translate-y-1" : "bg-white text-black hover:-translate-y-1")}
               >
                 全部
               </button>
-              <button 
-                onClick={() => setCategoryFilter('资讯')}
+              <button
+                onClick={() => { setCategoryFilter('资讯'); setArticlePage(1); }}
                 className={cn("px-4 py-2 border-4 border-black font-black uppercase transition-transform", categoryFilter === '资讯' ? "bg-comic-yellow text-black translate-y-1" : "bg-white text-black hover:-translate-y-1")}
               >
                 资讯
               </button>
-              <button 
-                onClick={() => setCategoryFilter('政策')}
+              <button
+                onClick={() => { setCategoryFilter('政策'); setArticlePage(1); }}
                 className={cn("px-4 py-2 border-4 border-black font-black uppercase transition-transform", categoryFilter === '政策' ? "bg-zaun-green text-black translate-y-1" : "bg-white text-black hover:-translate-y-1")}
               >
                 政策
@@ -419,7 +433,7 @@ export default function Dashboard() {
               type="text"
               placeholder="搜索标题或简介..."
               value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
+              onChange={e => { setSearchQuery(e.target.value); setArticlePage(1); }}
               className="flex-1 border-4 border-black p-3 font-bold focus:outline-none focus:ring-4 focus:ring-comic-blue"
             />
           </div>
@@ -530,6 +544,76 @@ export default function Dashboard() {
                 </div>
               )}
             </div>
+
+            {(activeTab === 'articles' ? articleTotalPages : gardenTotalPages) > 1 && (
+              <div className="mt-6 flex items-center justify-center gap-2 flex-wrap border-t-4 border-black pt-6">
+                <button
+                  onClick={() => activeTab === 'articles' ? setArticlePage(p => Math.max(1, p - 1)) : setGardenPage(p => Math.max(1, p - 1))}
+                  disabled={(activeTab === 'articles' ? articlePage : gardenPage) === 1}
+                  className="px-3 py-2 border-2 border-black font-black disabled:opacity-30 disabled:cursor-not-allowed bg-white hover:bg-comic-yellow/20"
+                >
+                  上一页
+                </button>
+
+                {Array.from({ length: activeTab === 'articles' ? articleTotalPages : gardenTotalPages }, (_, i) => i + 1)
+                  .filter(p => {
+                    const cp = activeTab === 'articles' ? articlePage : gardenPage;
+                    const tp = activeTab === 'articles' ? articleTotalPages : gardenTotalPages;
+                    return p === 1 || p === tp || Math.abs(p - cp) <= 1;
+                  })
+                  .reduce<(number | 'e')[]>((acc, p, idx, arr) => {
+                    if (idx > 0 && p - (arr[idx - 1] as number) > 1) acc.push('e');
+                    acc.push(p);
+                    return acc;
+                  }, [])
+                  .map((item, i) =>
+                    item === 'e' ? <span key={`e-${i}`} className="font-black px-1">...</span> : (
+                      <button
+                        key={item}
+                        onClick={() => activeTab === 'articles' ? setArticlePage(item) : setGardenPage(item)}
+                        className={cn(
+                          "w-10 h-10 border-2 border-black font-black transition-transform",
+                          (activeTab === 'articles' ? articlePage : gardenPage) === item
+                            ? "bg-black text-white translate-y-1"
+                            : "bg-white text-black hover:-translate-y-1"
+                        )}
+                      >
+                        {item}
+                      </button>
+                    )
+                  )}
+
+                <button
+                  onClick={() => activeTab === 'articles' ? setArticlePage(p => Math.min(articleTotalPages, p + 1)) : setGardenPage(p => Math.min(gardenTotalPages, p + 1))}
+                  disabled={(activeTab === 'articles' ? articlePage : gardenPage) === (activeTab === 'articles' ? articleTotalPages : gardenTotalPages)}
+                  className="px-3 py-2 border-2 border-black font-black disabled:opacity-30 disabled:cursor-not-allowed bg-white hover:bg-comic-yellow/20"
+                >
+                  下一页
+                </button>
+
+                <div className="flex items-center gap-2 ml-2">
+                  <input
+                    type="number"
+                    min={1}
+                    max={activeTab === 'articles' ? articleTotalPages : gardenTotalPages}
+                    value={jumpInput}
+                    onChange={e => setJumpInput(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        const page = parseInt(jumpInput);
+                        const tp = activeTab === 'articles' ? articleTotalPages : gardenTotalPages;
+                        if (page >= 1 && page <= tp) {
+                          activeTab === 'articles' ? setArticlePage(page) : setGardenPage(page);
+                          setJumpInput('');
+                        }
+                      }
+                    }}
+                    placeholder="页码"
+                    className="w-16 border-2 border-black p-1 font-bold text-center text-sm focus:outline-none"
+                  />
+                </div>
+              </div>
+            )}
           </div>
         )}
         {isEditing && (

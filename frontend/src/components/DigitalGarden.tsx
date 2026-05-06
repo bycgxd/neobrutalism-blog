@@ -1,6 +1,6 @@
 import { useState, useEffect, useContext } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Calendar, Tag, ChevronRight, Sprout, X } from 'lucide-react';
+import { Calendar, Tag, ChevronRight, Sprout, X, ChevronLeft } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
 import axios from 'axios';
 import { NavbarContext } from '../App';
@@ -20,6 +20,10 @@ export default function DigitalGarden() {
   const { setNavbarHidden } = useContext(NavbarContext);
   const [selectedNote, setSelectedNote] = useState<GardenNote & { color?: string } | null>(null);
   const [notes, setNotes] = useState<(GardenNote & { color?: string })[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [jumpInput, setJumpInput] = useState('');
 
   useEffect(() => {
     if (selectedNote) {
@@ -33,18 +37,33 @@ export default function DigitalGarden() {
   useEffect(() => {
     const fetchNotes = async () => {
       try {
-        const res = await axios.get('/api/garden');
-        const data = res.data.map((item: GardenNote, index: number) => ({
+        const params = new URLSearchParams();
+        params.set('page', String(currentPage));
+        params.set('limit', '10');
+
+        const res = await axios.get(`/api/garden?${params.toString()}`);
+        const { notes: items, total: t, totalPages: tp } = res.data;
+
+        setNotes(items.map((item: GardenNote, index: number) => ({
           ...item,
           color: colors[index % colors.length]
-        }));
-        setNotes(data);
+        })));
+        setTotal(t);
+        setTotalPages(tp);
       } catch (err) {
         console.error('Failed to fetch garden notes', err);
       }
     };
     fetchNotes();
-  }, []);
+  }, [currentPage]);
+
+  const handleJumpPage = () => {
+    const page = parseInt(jumpInput);
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+      setJumpInput('');
+    }
+  };
 
   return (
     <section id="garden" className="py-24 px-6 bg-paper relative overflow-hidden min-h-screen">
@@ -119,11 +138,73 @@ export default function DigitalGarden() {
           )}
         </div>
 
-        {notes.length > 0 && (
-          <div className="mt-24 text-center">
-             <button className="comic-button bg-black text-white text-3xl py-6 px-16 italic font-comic">
-               VIEW ALL ARCHIVES!!
-             </button>
+        {totalPages > 1 && (
+          <div className="mt-12 flex items-center justify-center gap-3 flex-wrap">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="comic-button bg-white text-black py-2 px-3 disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+              .reduce<(number | 'ellipsis')[]>((acc, p, idx, arr) => {
+                if (idx > 0 && p - (arr[idx - 1] as number) > 1) acc.push('ellipsis');
+                acc.push(p);
+                return acc;
+              }, [])
+              .map((item, i) =>
+                item === 'ellipsis' ? (
+                  <span key={`e-${i}`} className="font-black text-xl px-1">...</span>
+                ) : (
+                  <button
+                    key={item}
+                    onClick={() => setCurrentPage(item)}
+                    className={cn(
+                      "w-10 h-10 border-4 border-black font-black text-lg transition-transform",
+                      currentPage === item
+                        ? "bg-black text-white translate-y-1"
+                        : "bg-white text-black hover:-translate-y-1"
+                    )}
+                  >
+                    {item}
+                  </button>
+                )
+              )}
+
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="comic-button bg-white text-black py-2 px-3 disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-2 ml-4">
+              <span className="font-bold text-sm">跳转</span>
+              <input
+                type="number"
+                min={1}
+                max={totalPages}
+                value={jumpInput}
+                onChange={e => setJumpInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleJumpPage()}
+                placeholder={`1-${totalPages}`}
+                className="w-16 border-4 border-black p-2 font-bold text-center focus:outline-none"
+              />
+              <button
+                onClick={handleJumpPage}
+                className="comic-button bg-comic-blue text-white py-2 px-3 text-sm"
+              >
+                GO
+              </button>
+            </div>
+
+            <span className="text-sm font-bold text-gray-500 ml-2">
+              共 {total} 篇
+            </span>
           </div>
         )}
       </div>
