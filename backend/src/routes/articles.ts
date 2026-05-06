@@ -97,7 +97,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     const whereClause: any = isAdmin ? {} : { isHidden: false };
 
     if (category) {
-      whereClause.category = category;
+      whereClause.category = { [Op.like]: `%${category}%` };
     }
 
     if (search) {
