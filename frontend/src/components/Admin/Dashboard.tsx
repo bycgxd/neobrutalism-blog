@@ -40,7 +40,8 @@ const quillModules = {
 };
 
 export default function Dashboard() {
-  const [activeTab, setActiveTab] = useState<'articles' | 'garden'>('articles');
+  const [activeTab, setActiveTab] = useState<'news' | 'policies' | 'garden'>('news');
+  const [searchQuery, setSearchQuery] = useState('');
   
   const [articles, setArticles] = useState<Article[]>([]);
   const [gardenNotes, setGardenNotes] = useState<GardenNote[]>([]);
@@ -61,16 +62,18 @@ export default function Dashboard() {
       navigate('/admin');
       return;
     }
-    if (activeTab === 'articles') {
+    if (activeTab === 'news' || activeTab === 'policies') {
       fetchArticles();
     } else {
       fetchGardenNotes();
     }
-  }, [token, navigate, activeTab]);
+  }, [token, navigate, activeTab, searchQuery]);
 
   const fetchArticles = async () => {
     try {
-      const res = await axios.get('/api/articles?admin=true');
+      const category = activeTab === 'news' ? '资讯' : '政策';
+      const searchParam = searchQuery ? `&search=${encodeURIComponent(searchQuery)}` : '';
+      const res = await axios.get(`/api/articles?admin=true&category=${encodeURIComponent(category)}${searchParam}`);
       setArticles(res.data);
     } catch (err) {
       console.error(err);
@@ -172,7 +175,7 @@ export default function Dashboard() {
   const handleDelete = async (id: number) => {
     if (!confirm('确定删除吗？')) return;
     try {
-      if (activeTab === 'articles') {
+      if (activeTab === 'news' || activeTab === 'policies') {
         await axios.delete(`/api/articles/${id}`, { headers: { Authorization: `Bearer ${token}` } });
         fetchArticles();
       } else {
@@ -187,7 +190,7 @@ export default function Dashboard() {
 
   const toggleVisibility = async (id: number) => {
     try {
-      if (activeTab === 'articles') {
+      if (activeTab === 'news' || activeTab === 'policies') {
         await axios.patch(`/api/articles/${id}/toggle-visibility`, {}, { headers: { Authorization: `Bearer ${token}` } });
         fetchArticles();
       } else {
@@ -201,7 +204,7 @@ export default function Dashboard() {
   };
 
   const openEditor = (item?: any) => {
-    if (activeTab === 'articles') {
+    if (activeTab === 'news' || activeTab === 'policies') {
       if (item) {
         setCurrentArticle(item);
       } else {
@@ -210,7 +213,7 @@ export default function Dashboard() {
           summary: '',
           content: '',
           date: new Date().toISOString().split('T')[0],
-          category: '行业动态',
+          category: activeTab === 'news' ? '资讯' : '政策',
           sourceUrl: '',
           isHidden: false
         });
@@ -271,11 +274,11 @@ export default function Dashboard() {
 
         console.log("Mapped Data:", mappedData);
 
-        if (activeTab === 'articles') {
+        if (activeTab === 'news' || activeTab === 'policies') {
           setCurrentArticle(prev => ({ 
             ...prev, 
             ...mappedData,
-            category: mappedData.tags || prev.category || '行业动态'
+            category: mappedData.tags || prev.category || (activeTab === 'news' ? '资讯' : '政策')
           }));
         } else {
           setCurrentGardenNote(prev => ({ 
@@ -308,10 +311,16 @@ export default function Dashboard() {
           
           <div className="flex gap-4">
             <button 
-              onClick={() => { setActiveTab('articles'); setIsEditing(false); }}
-              className={cn("comic-button flex items-center gap-2", activeTab === 'articles' ? "bg-comic-yellow text-black" : "bg-white text-black")}
+              onClick={() => { setActiveTab('news'); setIsEditing(false); }}
+              className={cn("comic-button flex items-center gap-2", activeTab === 'news' ? "bg-comic-yellow text-black" : "bg-white text-black")}
             >
-              <LayoutDashboard className="w-5 h-5" /> 行业资讯管理
+              <LayoutDashboard className="w-5 h-5" /> 资讯管理
+            </button>
+            <button 
+              onClick={() => { setActiveTab('policies'); setIsEditing(false); }}
+              className={cn("comic-button flex items-center gap-2", activeTab === 'policies' ? "bg-comic-blue text-white" : "bg-white text-black")}
+            >
+              <LayoutDashboard className="w-5 h-5" /> 政策管理
             </button>
             <button 
               onClick={() => { setActiveTab('garden'); setIsEditing(false); }}
@@ -326,26 +335,38 @@ export default function Dashboard() {
           </button>
         </div>
 
+        {!isEditing && (activeTab === 'news' || activeTab === 'policies') && (
+          <div className="mb-6 flex">
+            <input 
+              type="text"
+              placeholder={`搜索${activeTab === 'news' ? '资讯' : '政策'}...`}
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="flex-1 border-4 border-black p-3 font-bold focus:outline-none focus:ring-4 focus:ring-comic-blue"
+            />
+          </div>
+        )}
+
         {!isEditing ? (
           <div className="comic-panel bg-white p-8">
             <div className="flex justify-between items-center mb-8 border-b-4 border-black pb-4">
               <h2 className="text-3xl font-black">
-                {activeTab === 'articles' ? '行业资讯管理' : '数字花园管理'}
+                {activeTab === 'news' ? '资讯管理' : activeTab === 'policies' ? '政策管理' : '数字花园管理'}
               </h2>
               <button onClick={() => openEditor()} className="comic-button bg-comic-blue text-white flex items-center gap-2">
-                <Plus className="w-5 h-5" /> 新增{activeTab === 'articles' ? '文章' : '笔记'}
+                <Plus className="w-5 h-5" /> 新增{activeTab === 'garden' ? '笔记' : '文章'}
               </button>
             </div>
 
             <div className="space-y-4">
-              {(activeTab === 'articles' ? articles : gardenNotes).map((item: any) => (
+              {(activeTab === 'garden' ? gardenNotes : articles).map((item: any) => (
                 <div key={item.id} className={cn("border-4 border-black p-4 flex items-center justify-between transition-colors", item.isHidden ? "bg-gray-200" : "bg-white hover:bg-comic-yellow/10")}>
                   <div>
                     <h3 className={cn("text-xl font-bold", item.isHidden && "line-through text-gray-500")}>
                       {item.title}
                     </h3>
                     <div className="flex items-center gap-4 mt-2 text-sm font-black text-gray-600">
-                      <span className="bg-black text-white px-2">{activeTab === 'articles' ? item.category : item.tags}</span>
+                      <span className="bg-black text-white px-2">{activeTab === 'garden' ? item.tags : item.category}</span>
                       <span>{item.date}</span>
                     </div>
                   </div>
@@ -373,7 +394,7 @@ export default function Dashboard() {
                   </div>
                 </div>
               ))}
-              {(activeTab === 'articles' ? articles : gardenNotes).length === 0 && (
+              {(activeTab === 'garden' ? gardenNotes : articles).length === 0 && (
                 <div className="text-center py-10 font-bold text-xl text-gray-500">
                   暂无内容，请点击右上角新增
                 </div>
@@ -384,7 +405,7 @@ export default function Dashboard() {
           <div className="comic-panel bg-white p-8">
             <div className="flex justify-between items-center mb-8 border-b-4 border-black pb-4">
               <h2 className="text-3xl font-black">
-                {activeTab === 'articles' 
+                {activeTab === 'news' || activeTab === 'policies'
                   ? (currentArticle.id ? '编辑文章' : '新增文章') 
                   : (currentGardenNote.id ? '编辑笔记' : '新增笔记')}
               </h2>
@@ -406,7 +427,7 @@ export default function Dashboard() {
               </div>
             </div>
             
-            {activeTab === 'articles' ? (
+            {activeTab === 'news' || activeTab === 'policies' ? (
               <form onSubmit={handleArticleSave} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>

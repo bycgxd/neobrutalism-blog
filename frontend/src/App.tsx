@@ -3,12 +3,13 @@ import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import About from './components/About';
 import Toolbox from './components/Toolbox';
-import Minigames from './components/Minigames';
+import ArticlesView from './components/ArticlesView';
 import DigitalGarden from './components/DigitalGarden';
 import Login from './components/Admin/Login';
 import Dashboard from './components/Admin/Dashboard';
 import { motion, AnimatePresence } from 'motion/react';
 import { ReactNode, useEffect, useState, createContext, useContext } from 'react';
+import { Newspaper, FileText } from 'lucide-react';
 
 export const NavbarContext = createContext({
   isNavbarHidden: false,
@@ -73,7 +74,8 @@ function AnimatedRoutes() {
           <Route path="/" element={<Hero />} />
           <Route path="/about" element={<About />} />
           <Route path="/toolbox" element={<Toolbox />} />
-          <Route path="/minigames" element={<Minigames />} />
+          <Route path="/news" element={<ArticlesView category="资讯" titleEn="INDUSTRYNEWS" titleZh="行业资讯" subtitle="前沿动态、行业趋势" icon={Newspaper} />} />
+          <Route path="/policies" element={<ArticlesView category="政策" titleEn="PUBLICPOLICY" titleZh="政策解读" subtitle="政策法规、权威解读" icon={FileText} />} />
           <Route path="/garden" element={<DigitalGarden />} />
         </Routes>
       </motion.div>

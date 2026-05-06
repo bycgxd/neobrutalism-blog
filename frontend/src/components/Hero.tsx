@@ -34,8 +34,8 @@ export default function Hero() {
           </div>
           
           <div className="flex flex-wrap gap-6">
-            <button onClick={() => window.location.href = '/minigames'} className="comic-button">
-              查看资讯 <span className="font-sans">→</span>
+            <button onClick={() => window.location.href = '/news'} className="comic-button">
+              探索资讯 <ArrowRight className="inline ml-2" />
             </button>
             <button onClick={() => window.location.href = '/about'} className="comic-button bg-white text-black">
               我的档案

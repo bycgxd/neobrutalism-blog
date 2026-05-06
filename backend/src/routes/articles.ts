@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { Op } from 'sequelize';
 import Article from '../models/Article';
 import { authenticate } from '../middlewares/auth';
 
@@ -7,8 +8,22 @@ const router = Router();
 // Get all articles (public, only visible ones unless authenticated)
 router.get('/', async (req: Request, res: Response): Promise<void> => {
   try {
-    const isAdmin = req.query.admin === 'true'; // A simple way to check if requesting from admin panel
-    const whereClause = isAdmin ? {} : { isHidden: false };
+    const isAdmin = req.query.admin === 'true';
+    const search = req.query.search as string;
+    const category = req.query.category as string;
+
+    const whereClause: any = isAdmin ? {} : { isHidden: false };
+    
+    if (category) {
+      whereClause.category = category;
+    }
+
+    if (search) {
+      whereClause[Op.or] = [
+        { title: { [Op.like]: `%${search}%` } },
+        { summary: { [Op.like]: `%${search}%` } },
+      ];
+    }
     
     const articles = await Article.findAll({
       where: whereClause,

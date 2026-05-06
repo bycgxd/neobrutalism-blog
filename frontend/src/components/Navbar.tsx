@@ -1,12 +1,13 @@
 import { motion, AnimatePresence } from 'motion/react';
-import { Home, User, Briefcase, Gamepad2, Sprout, Mail, Cat, Newspaper } from 'lucide-react';
+import { Home, User, Briefcase, Gamepad2, Sprout, Mail, Cat, Newspaper, FileText } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
 import { NavLink } from 'react-router-dom';
 
 const navItems = [
   { path: '/', label: '首页', icon: Home, color: 'bg-neo-pink' },
   { path: '/toolbox', label: '工具箱', icon: Briefcase, color: 'bg-neo-blue' },
-  { path: '/minigames', label: '行业资讯', icon: Newspaper, color: 'bg-neo-green' },
+  { path: '/news', label: '资讯', icon: Newspaper, color: 'bg-neo-green' },
+  { path: '/policies', label: '政策', icon: FileText, color: 'bg-neo-purple' },
   { path: '/garden', label: '数字花园', icon: Sprout, color: 'bg-neo-orange' },
   { path: '/about', label: '关于我', icon: User, color: 'bg-neo-yellow' },
 ];

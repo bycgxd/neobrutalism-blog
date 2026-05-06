@@ -20,7 +20,7 @@ interface Article {
 
 const colors = ['bg-comic-blue', 'bg-comic-red', 'bg-comic-yellow', 'bg-zaun-green', 'bg-zaun-purple'];
 
-export default function IndustryNews() {
+export default function ArticlesView({ category, titleEn, titleZh, subtitle, icon: Icon }: { category: string, titleEn: string, titleZh: string, subtitle: string, icon: any }) {
   const { setNavbarHidden } = useContext(NavbarContext);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
@@ -39,7 +39,8 @@ export default function IndustryNews() {
   useEffect(() => {
     const fetchArticles = async () => {
       try {
-        const res = await axios.get('/api/articles');
+        const searchParam = searchQuery ? `&search=${encodeURIComponent(searchQuery)}` : '';
+        const res = await axios.get(`/api/articles?category=${encodeURIComponent(category)}${searchParam}`);
         // Assign a random or sequential color to each article for UI styling
         const data = res.data.map((item: Article, index: number) => ({
           ...item,
@@ -50,31 +51,31 @@ export default function IndustryNews() {
         console.error('Failed to fetch articles', err);
       }
     };
-    fetchArticles();
-  }, []);
+    
+    // We can debounce the fetch if needed, but for now simple fetch on change is fine
+    const delayDebounceFn = setTimeout(() => {
+      fetchArticles();
+    }, 300);
 
-  // 过滤和排序逻辑
+    return () => clearTimeout(delayDebounceFn);
+  }, [category, searchQuery]);
+
+  // Sorting logic (filtering is now done on backend)
   const filteredAndSortedArticles = useMemo(() => {
-    let result = articles.filter(article => 
-      article.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      article.summary?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      article.category?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-
+    let result = [...articles];
     result.sort((a, b) => {
       const dateA = new Date(a.date).getTime();
       const dateB = new Date(b.date).getTime();
       return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
     });
-
     return result;
-  }, [articles, searchQuery, sortOrder]);
+  }, [articles, sortOrder]);
 
   return (
-    <section id="minigames" className="py-24 px-6 bg-paper border-y-8 border-black relative overflow-hidden min-h-screen">
+    <section id="articles" className="py-24 px-6 bg-paper border-y-8 border-black relative overflow-hidden min-h-screen">
       {/* Background decoration */}
       <div className="absolute top-0 right-0 p-10 opacity-5 rotate-12 pointer-events-none">
-        <Newspaper className="w-64 h-64" />
+        <Icon className="w-64 h-64" />
       </div>
       <div className="absolute bottom-20 left-10 onomatopoeia text-comic-blue text-6xl -rotate-12 opacity-30 select-none z-0">
         READ!
@@ -87,12 +88,12 @@ export default function IndustryNews() {
             <motion.h2 
               initial={{ x: -50, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
-              className="text-7xl md:text-9xl font-comic mb-4 uppercase italic"
+              className="text-7xl md:text-9xl font-comic mb-4 uppercase italic flex flex-wrap"
             >
-              INDUSTRY<span className="text-comic-red">NEWS</span>
+              {titleEn.substring(0, titleEn.length - 4)}<span className="text-comic-red">{titleEn.slice(-4)}</span>
             </motion.h2>
             <div className="bg-black text-white px-4 py-1 inline-block rotate-[-1deg] font-marker text-xl">
-              "医药行业资讯、政策"
+              "{subtitle}"
             </div>
           </div>
 
