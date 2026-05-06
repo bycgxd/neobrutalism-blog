@@ -1,11 +1,12 @@
 import { useState, useRef } from 'react';
 import axios from 'axios';
-import { Upload, X, CheckCircle, XCircle, FileJson, Loader2 } from 'lucide-react';
+import { Upload, X, CheckCircle, XCircle, FileJson, Loader2, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface ImportResult {
   filename: string;
   success: boolean;
+  skipped?: boolean;
   title?: string;
   id?: number;
   error?: string;
@@ -69,7 +70,8 @@ export default function BulkImport({ open, onClose, onSaved }: {
   };
 
   const successCount = results.filter(r => r.success).length;
-  const failCount = results.filter(r => !r.success).length;
+  const skipCount = results.filter(r => r.skipped).length;
+  const failCount = results.filter(r => !r.success && !r.skipped).length;
   const done = results.length > 0 && !importing;
 
   if (!open) return null;
@@ -159,10 +161,15 @@ export default function BulkImport({ open, onClose, onSaved }: {
 
           {done && (
             <div className="space-y-3">
-              <div className="flex items-center gap-4 justify-center mb-2">
+              <div className="flex items-center gap-4 justify-center mb-2 flex-wrap">
                 {successCount > 0 && (
                   <span className="font-black text-zaun-green flex items-center gap-1">
                     <CheckCircle className="w-5 h-5" /> {successCount} 成功
+                  </span>
+                )}
+                {skipCount > 0 && (
+                  <span className="font-black text-comic-yellow flex items-center gap-1">
+                    <AlertTriangle className="w-5 h-5" /> {skipCount} 跳过
                   </span>
                 )}
                 {failCount > 0 && (
@@ -173,18 +180,25 @@ export default function BulkImport({ open, onClose, onSaved }: {
               </div>
 
               <div className="max-h-60 overflow-y-auto space-y-1">
-                {results.map((r, i) => (
-                  <div key={i} className={`border-2 border-black p-2 text-sm font-bold flex items-center gap-2 ${r.success ? 'bg-zaun-green/10' : 'bg-comic-red/10'}`}>
-                    {r.success ? (
-                      <CheckCircle className="w-4 h-4 text-zaun-green flex-shrink-0" />
-                    ) : (
-                      <XCircle className="w-4 h-4 text-comic-red flex-shrink-0" />
-                    )}
-                    <span className="truncate">{r.filename}</span>
-                    {r.success && <span className="text-gray-500 text-xs flex-shrink-0">ID:{r.id}</span>}
-                    {!r.success && <span className="text-comic-red text-xs flex-shrink-0">{r.error}</span>}
-                  </div>
-                ))}
+                {results.map((r, i) => {
+                  const isSkip = r.skipped;
+                  const isOk = r.success;
+                  return (
+                    <div key={i} className={`border-2 border-black p-2 text-sm font-bold flex items-center gap-2 ${isOk ? 'bg-zaun-green/10' : isSkip ? 'bg-comic-yellow/10' : 'bg-comic-red/10'}`}>
+                      {isOk ? (
+                        <CheckCircle className="w-4 h-4 text-zaun-green flex-shrink-0" />
+                      ) : isSkip ? (
+                        <AlertTriangle className="w-4 h-4 text-comic-yellow flex-shrink-0" />
+                      ) : (
+                        <XCircle className="w-4 h-4 text-comic-red flex-shrink-0" />
+                      )}
+                      <span className="truncate">{r.filename}</span>
+                      {isOk && <span className="text-gray-500 text-xs flex-shrink-0">ID:{r.id}</span>}
+                      {isSkip && <span className="text-comic-yellow text-xs flex-shrink-0">{r.error}</span>}
+                      {!isOk && !isSkip && <span className="text-comic-red text-xs flex-shrink-0">{r.error}</span>}
+                    </div>
+                  );
+                })}
               </div>
 
               <div className="flex gap-3 pt-4 border-t-4 border-black">

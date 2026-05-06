@@ -41,7 +41,7 @@ router.post('/bulk-import', authenticate, jsonUpload.array('files', 50), async (
       return;
     }
 
-    const results: { filename: string; success: boolean; title?: string; id?: number; error?: string }[] = [];
+    const results: { filename: string; success: boolean; skipped?: boolean; title?: string; id?: number; error?: string }[] = [];
 
     for (const file of files) {
       try {
@@ -51,8 +51,16 @@ router.post('/bulk-import', authenticate, jsonUpload.array('files', 50), async (
         let json = JSON.parse(text);
         if (Array.isArray(json)) json = json[0];
 
+        const title = json.title || json.name || '未命名';
+
+        const existing = await Article.findOne({ where: { title } });
+        if (existing) {
+          results.push({ filename: file.originalname, success: false, skipped: true, title, error: '已存在同名文章' });
+          continue;
+        }
+
         const article = await Article.create({
-          title: json.title || json.name || '未命名',
+          title,
           summary: json.summary || json.desc || '',
           content: formatForQuill(json.content || json.text || ''),
           date: json.publish_date || json.date || new Date().toISOString().split('T')[0],
