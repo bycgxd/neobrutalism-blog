@@ -11,9 +11,12 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     const isAdmin = req.query.admin === 'true';
     const search = req.query.search as string;
     const category = req.query.category as string;
+    const page = parseInt(req.query.page as string) || 0;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const order = (req.query.order as string) === 'asc' ? 'ASC' : 'DESC';
 
     const whereClause: any = isAdmin ? {} : { isHidden: false };
-    
+
     if (category) {
       whereClause.category = category;
     }
@@ -24,10 +27,22 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
         { summary: { [Op.like]: `%${search}%` } },
       ];
     }
-    
+
+    if (page > 0) {
+      const total = await Article.count({ where: whereClause });
+      const articles = await Article.findAll({
+        where: whereClause,
+        order: [['date', order]],
+        limit,
+        offset: (page - 1) * limit,
+      });
+      res.json({ articles, total, page, totalPages: Math.ceil(total / limit) });
+      return;
+    }
+
     const articles = await Article.findAll({
       where: whereClause,
-      order: [['date', 'DESC']],
+      order: [['date', order]],
     });
     res.json(articles);
   } catch (error) {

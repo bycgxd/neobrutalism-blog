@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Newspaper, Search, ArrowRight, X, Calendar, ArrowUpDown, Download, Sparkles } from 'lucide-react';
+import { Newspaper, Search, ArrowRight, X, Calendar, ArrowUpDown, Download, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
 import axios from 'axios';
 import { NavbarContext } from '../App';
@@ -28,6 +28,10 @@ export default function ArticlesView() {
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
   const [selectedArticle, setSelectedArticle] = useState<Article & { color?: string } | null>(null);
   const [articles, setArticles] = useState<(Article & { color?: string })[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [jumpInput, setJumpInput] = useState('');
 
   useEffect(() => {
     if (selectedArticle) {
@@ -42,44 +46,42 @@ export default function ArticlesView() {
   useEffect(() => {
     const fetchArticles = async () => {
       try {
-        const searchParam = searchQuery ? `&search=${encodeURIComponent(searchQuery)}` : '';
-        const res = await axios.get(`/api/articles?${searchParam}`);
-        
-        const data = res.data.map((item: Article, index: number) => ({
+        const params = new URLSearchParams();
+        params.set('page', String(currentPage));
+        params.set('limit', '10');
+        if (searchQuery) params.set('search', searchQuery);
+        if (activeTab === 'news') params.set('category', '资讯');
+        if (activeTab === 'policies') params.set('category', '政策');
+        params.set('order', sortOrder);
+
+        const res = await axios.get(`/api/articles?${params.toString()}`);
+        const { articles: items, total: t, totalPages: tp } = res.data;
+
+        setArticles(items.map((item: Article, index: number) => ({
           ...item,
           color: colors[index % colors.length]
-        }));
-        setArticles(data);
+        })));
+        setTotal(t);
+        setTotalPages(tp);
       } catch (err) {
         console.error('Failed to fetch articles', err);
       }
     };
-    
+
     const delayDebounceFn = setTimeout(() => {
       fetchArticles();
     }, 300);
 
     return () => clearTimeout(delayDebounceFn);
-  }, [searchQuery]);
+  }, [searchQuery, currentPage, activeTab, sortOrder]);
 
-  // Sorting logic (filtering is now done on frontend for tabs)
-  const filteredAndSortedArticles = useMemo(() => {
-    let result = articles;
-    
-    if (activeTab === 'news') {
-      result = result.filter(a => a.category?.includes('资讯'));
-    } else if (activeTab === 'policies') {
-      result = result.filter(a => a.category?.includes('政策'));
+  const handleJumpPage = () => {
+    const page = parseInt(jumpInput);
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+      setJumpInput('');
     }
-
-    result = [...result];
-    result.sort((a, b) => {
-      const dateA = new Date(a.date).getTime();
-      const dateB = new Date(b.date).getTime();
-      return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
-    });
-    return result;
-  }, [articles, sortOrder, activeTab]);
+  };
 
   return (
     <section id="articles" className="py-24 px-6 bg-paper border-y-8 border-black relative overflow-hidden min-h-screen">
@@ -115,19 +117,19 @@ export default function ArticlesView() {
           >
             <div className="flex gap-2 mr-4">
               <button 
-                onClick={() => setActiveTab('all')}
+                onClick={() => { setActiveTab('all'); setCurrentPage(1); }}
                 className={cn("px-4 py-2 border-4 border-black font-black uppercase transition-transform", activeTab === 'all' ? "bg-comic-blue text-white translate-y-1" : "bg-white text-black hover:-translate-y-1")}
               >
                 全部
               </button>
-              <button 
-                onClick={() => setActiveTab('news')}
+              <button
+                onClick={() => { setActiveTab('news'); setCurrentPage(1); }}
                 className={cn("px-4 py-2 border-4 border-black font-black uppercase transition-transform", activeTab === 'news' ? "bg-comic-yellow text-black translate-y-1" : "bg-white text-black hover:-translate-y-1")}
               >
                 资讯
               </button>
-              <button 
-                onClick={() => setActiveTab('policies')}
+              <button
+                onClick={() => { setActiveTab('policies'); setCurrentPage(1); }}
                 className={cn("px-4 py-2 border-4 border-black font-black uppercase transition-transform", activeTab === 'policies' ? "bg-zaun-green text-black translate-y-1" : "bg-white text-black hover:-translate-y-1")}
               >
                 政策
@@ -141,14 +143,14 @@ export default function ArticlesView() {
                   type="text"
                   placeholder="搜索文章..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
                   className="w-full font-bold focus:outline-none bg-transparent"
                 />
               </div>
             </div>
 
             <button
-              onClick={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
+              onClick={() => { setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc'); setCurrentPage(1); }}
               className="comic-button bg-white text-black flex items-center justify-center gap-2 whitespace-nowrap"
             >
               <ArrowUpDown className="w-5 h-5" />
@@ -160,7 +162,7 @@ export default function ArticlesView() {
         {/* Articles Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <AnimatePresence mode="popLayout">
-            {filteredAndSortedArticles.map((article, idx) => (
+            {articles.map((article, idx) => (
               <motion.div
                 key={article.id}
                 layout
@@ -204,7 +206,7 @@ export default function ArticlesView() {
             ))}
           </AnimatePresence>
           
-          {filteredAndSortedArticles.length === 0 && (
+          {articles.length === 0 && (
             <div className="col-span-1 md:col-span-2 py-20 text-center">
                <div className="text-4xl font-comic text-gray-400 mb-4">暂无相关资讯</div>
                <p className="font-bold text-xl">换个搜索词试试看？</p>
@@ -212,6 +214,79 @@ export default function ArticlesView() {
           )}
         </div>
       </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="mt-10 flex items-center justify-center gap-3 flex-wrap">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="comic-button bg-white text-black py-2 px-3 disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+              .reduce<(number | 'ellipsis')[]>((acc, p, idx, arr) => {
+                if (idx > 0 && p - (arr[idx - 1] as number) > 1) {
+                  acc.push('ellipsis');
+                }
+                acc.push(p);
+                return acc;
+              }, [])
+              .map((item, i) =>
+                item === 'ellipsis' ? (
+                  <span key={`e-${i}`} className="font-black text-xl px-1">...</span>
+                ) : (
+                  <button
+                    key={item}
+                    onClick={() => setCurrentPage(item)}
+                    className={cn(
+                      "w-10 h-10 border-4 border-black font-black text-lg transition-transform",
+                      currentPage === item
+                        ? "bg-black text-white translate-y-1"
+                        : "bg-white text-black hover:-translate-y-1"
+                    )}
+                  >
+                    {item}
+                  </button>
+                )
+              )}
+
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="comic-button bg-white text-black py-2 px-3 disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-2 ml-4">
+              <span className="font-bold text-sm">跳转</span>
+              <input
+                type="number"
+                min={1}
+                max={totalPages}
+                value={jumpInput}
+                onChange={e => setJumpInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleJumpPage()}
+                placeholder={`1-${totalPages}`}
+                className="w-16 border-4 border-black p-2 font-bold text-center focus:outline-none"
+              />
+              <button
+                onClick={handleJumpPage}
+                className="comic-button bg-comic-blue text-white py-2 px-3 text-sm"
+              >
+                GO
+              </button>
+            </div>
+
+            <span className="text-sm font-bold text-gray-500 ml-2">
+              共 {total} 篇
+            </span>
+          </div>
+        )}
 
       {/* Article Detail Modal */}
       <AnimatePresence>
