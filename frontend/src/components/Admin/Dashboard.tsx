@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Edit2, Trash2, LogOut, Eye, EyeOff, Paperclip, LayoutDashboard, Sprout } from 'lucide-react';
+import { Plus, Edit2, Trash2, LogOut, Eye, EyeOff, Paperclip, LayoutDashboard, Sprout, CheckSquare, Square } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/src/lib/utils';
 import ReactQuill from 'react-quill-new';
@@ -55,6 +55,8 @@ export default function Dashboard() {
   const [importError, setImportError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+
   const navigate = useNavigate();
   const token = localStorage.getItem('adminToken');
 
@@ -89,11 +91,60 @@ export default function Dashboard() {
   };
 
   const filteredArticles = articles.filter(article => {
-    const matchesSearch = article.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          article.summary.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = categoryFilter === 'all' || article.category === categoryFilter;
+    const matchesSearch = !searchQuery || 
+                          (article.title && article.title.toLowerCase().includes(searchQuery.toLowerCase())) || 
+                          (article.summary && article.summary.toLowerCase().includes(searchQuery.toLowerCase()));
+    
+    // Check if category includes '资讯' or '政策' to support tags that might have extra text
+    const matchesCategory = categoryFilter === 'all' || 
+                            (article.category && article.category.includes(categoryFilter));
+                            
     return matchesSearch && matchesCategory;
   });
+
+  const currentList: any[] = activeTab === 'articles' ? filteredArticles : gardenNotes;
+  const allIds = currentList.map(item => item.id);
+
+  const toggleSelect = (id: number) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === allIds.length && allIds.length > 0) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(allIds));
+    }
+  };
+
+  const batchDelete = async () => {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`确定删除选中的 ${selectedIds.size} 项吗？此操作不可恢复。`)) return;
+    const endpoint = activeTab === 'articles' ? '/api/articles' : '/api/garden';
+    for (const id of selectedIds) {
+      try {
+        await axios.delete(`${endpoint}/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+      } catch (err) { console.error(`删除 ${id} 失败`, err); }
+    }
+    setSelectedIds(new Set());
+    activeTab === 'articles' ? fetchArticles() : fetchGardenNotes();
+  };
+
+  const batchToggleVisibility = async () => {
+    if (selectedIds.size === 0) return;
+    const endpoint = activeTab === 'articles' ? '/api/articles' : '/api/garden';
+    for (const id of selectedIds) {
+      try {
+        await axios.patch(`${endpoint}/${id}/toggle-visibility`, {}, { headers: { Authorization: `Bearer ${token}` } });
+      } catch (err) { console.error(`切换 ${id} 失败`, err); }
+    }
+    setSelectedIds(new Set());
+    activeTab === 'articles' ? fetchArticles() : fetchGardenNotes();
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('adminToken');
@@ -369,45 +420,95 @@ export default function Dashboard() {
 
         {!isEditing ? (
           <div className="comic-panel bg-white p-8">
-            <div className="flex justify-between items-center mb-8 border-b-4 border-black pb-4">
-              <h2 className="text-3xl font-black">
-                {activeTab === 'articles' ? '行业资讯管理' : '数字花园管理'}
-              </h2>
+            <div className="flex justify-between items-center mb-8 border-b-4 border-black pb-4 flex-wrap gap-4">
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={toggleSelectAll}
+                  className="p-2 border-2 border-black bg-white transition-transform active:scale-95"
+                  title="全选/取消全选"
+                >
+                  {selectedIds.size === allIds.length && allIds.length > 0
+                    ? <CheckSquare className="w-5 h-5" />
+                    : <Square className="w-5 h-5" />
+                  }
+                </button>
+                <h2 className="text-3xl font-black">
+                  {activeTab === 'articles' ? '行业资讯管理' : '数字花园管理'}
+                </h2>
+              </div>
               <button onClick={() => openEditor()} className="comic-button bg-comic-blue text-white flex items-center gap-2">
                 <Plus className="w-5 h-5" /> 新增{activeTab === 'articles' ? '文章' : '笔记'}
               </button>
             </div>
 
+            <AnimatePresence>
+              {selectedIds.size > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="mb-4 bg-black text-white p-4 border-4 border-black flex items-center justify-between flex-wrap gap-3"
+                >
+                  <span className="font-black text-lg">已选中 {selectedIds.size} 项</span>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={batchToggleVisibility}
+                      className="comic-button bg-comic-yellow text-black text-sm py-2 px-4"
+                    >
+                      <EyeOff className="w-4 h-4" /> 一键隐藏/显示
+                    </button>
+                    <button
+                      onClick={batchDelete}
+                      className="comic-button bg-comic-red text-white text-sm py-2 px-4"
+                    >
+                      <Trash2 className="w-4 h-4" /> 一键删除
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             <div className="space-y-4">
-              {(activeTab === 'articles' ? filteredArticles : gardenNotes).map((item: any) => (
+              {currentList.map((item: any) => (
                 <div key={item.id} className={cn("border-4 border-black p-4 flex items-center justify-between transition-colors", item.isHidden ? "bg-gray-200" : "bg-white hover:bg-comic-yellow/10")}>
-                  <div>
-                    <h3 className={cn("text-xl font-bold", item.isHidden && "line-through text-gray-500")}>
-                      {item.title}
-                    </h3>
-                    <div className="flex items-center gap-4 mt-2 text-sm font-black text-gray-600">
-                      <span className={cn("text-white px-2", activeTab === 'articles' && item.category === '政策' ? 'bg-zaun-green' : 'bg-black')}>
-                        {activeTab === 'articles' ? item.category : item.tags}
-                      </span>
-                      <span>{item.date}</span>
+                  <div className="flex items-center gap-4">
+                    <button
+                      onClick={() => toggleSelect(item.id)}
+                      className="p-1 flex-shrink-0 transition-transform active:scale-95"
+                    >
+                      {selectedIds.has(item.id)
+                        ? <CheckSquare className="w-6 h-6" />
+                        : <Square className="w-6 h-6" />
+                      }
+                    </button>
+                    <div>
+                      <h3 className={cn("text-xl font-bold", item.isHidden && "line-through text-gray-500")}>
+                        {item.title}
+                      </h3>
+                      <div className="flex items-center gap-4 mt-2 text-sm font-black text-gray-600">
+                        <span className={cn("text-white px-2", activeTab === 'articles' && item.category === '政策' ? 'bg-zaun-green' : 'bg-black')}>
+                          {activeTab === 'articles' ? item.category : item.tags}
+                        </span>
+                        <span>{item.date}</span>
+                      </div>
                     </div>
                   </div>
-                  
-                  <div className="flex items-center gap-3">
-                    <button 
+
+                  <div className="flex items-center gap-3 flex-shrink-0">
+                    <button
                       onClick={() => toggleVisibility(item.id)}
                       className={cn("p-2 border-2 border-black transition-transform active:scale-95", item.isHidden ? "bg-comic-yellow" : "bg-white")}
                       title={item.isHidden ? "点击显示" : "点击隐藏"}
                     >
                       {item.isHidden ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
-                    <button 
+                    <button
                       onClick={() => openEditor(item)}
                       className="p-2 bg-comic-blue text-white border-2 border-black transition-transform active:scale-95"
                     >
                       <Edit2 className="w-5 h-5" />
                     </button>
-                    <button 
+                    <button
                       onClick={() => handleDelete(item.id)}
                       className="p-2 bg-comic-red text-white border-2 border-black transition-transform active:scale-95"
                     >
@@ -416,7 +517,7 @@ export default function Dashboard() {
                   </div>
                 </div>
               ))}
-              {(activeTab === 'articles' ? filteredArticles : gardenNotes).length === 0 && (
+              {currentList.length === 0 && (
                 <div className="text-center py-10 font-bold text-xl text-gray-500">
                   暂无内容，请点击右上角新增
                 </div>
@@ -464,15 +565,14 @@ export default function Dashboard() {
                   </div>
                   <div>
                     <label className="block font-black mb-2 uppercase">分类标签</label>
-                    <select
-                      value={currentArticle.category || '资讯'}
+                    <input 
+                      type="text" 
+                      value={currentArticle.category || ''}
                       onChange={e => setCurrentArticle({...currentArticle, category: e.target.value})}
-                      className="w-full border-4 border-black p-3 font-bold focus:outline-none focus:ring-4 focus:ring-comic-blue bg-white"
+                      placeholder="例如：资讯、政策"
+                      className="w-full border-4 border-black p-3 font-bold focus:outline-none focus:ring-4 focus:ring-comic-blue"
                       required
-                    >
-                      <option value="资讯">资讯</option>
-                      <option value="政策">政策</option>
-                    </select>
+                    />
                   </div>
                   <div>
                     <label className="block font-black mb-2 uppercase">发布时间</label>

@@ -132,13 +132,12 @@ export default function ArticlesView() {
               </button>
             </div>
 
-            <div className="relative group flex-grow md:w-64">
-              <div className="absolute inset-0 bg-black translate-x-1 translate-y-1" />
-              <div className="relative flex items-center bg-white border-4 border-black p-2 group-focus-within:bg-comic-yellow/20 transition-colors">
-                <Search className="w-6 h-6 mr-2 text-black" />
-                <input 
-                  type="text" 
-                  placeholder="搜索文章..." 
+            <div className="relative group w-full sm:w-[270px]">
+              <div className="relative flex items-center bg-white border-4 border-black p-[10px] group-focus-within:bg-comic-yellow/20 transition-colors h-full">
+                <Search className="w-5 h-5 mr-2 text-black flex-shrink-0" />
+                <input
+                  type="text"
+                  placeholder="搜索文章..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full font-bold focus:outline-none bg-transparent"
@@ -146,7 +145,7 @@ export default function ArticlesView() {
               </div>
             </div>
 
-            <button 
+            <button
               onClick={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
               className="comic-button bg-white text-black flex items-center justify-center gap-2 whitespace-nowrap"
             >
@@ -187,7 +186,7 @@ export default function ArticlesView() {
                       {article.title}
                     </h3>
                     
-                    <p className="text-lg font-bold text-gray-700 flex-grow">
+                    <p className="text-lg font-bold text-gray-700 flex-grow line-clamp-2">
                       {article.summary}
                     </p>
 
