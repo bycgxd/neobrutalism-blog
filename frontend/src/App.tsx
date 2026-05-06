@@ -74,8 +74,7 @@ function AnimatedRoutes() {
           <Route path="/" element={<Hero />} />
           <Route path="/about" element={<About />} />
           <Route path="/toolbox" element={<Toolbox />} />
-          <Route path="/news" element={<ArticlesView category="资讯" titleEn="INDUSTRYNEWS" titleZh="行业资讯" subtitle="前沿动态、行业趋势" icon={Newspaper} />} />
-          <Route path="/policies" element={<ArticlesView category="政策" titleEn="PUBLICPOLICY" titleZh="政策解读" subtitle="政策法规、权威解读" icon={FileText} />} />
+          <Route path="/articles" element={<ArticlesView />} />
           <Route path="/garden" element={<DigitalGarden />} />
         </Routes>
       </motion.div>

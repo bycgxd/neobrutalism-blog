@@ -34,10 +34,10 @@ export default function Hero() {
           </div>
           
           <div className="flex flex-wrap gap-6">
-            <button onClick={() => window.location.href = '/news'} className="comic-button">
-              探索资讯 <ArrowRight className="inline ml-2" />
-            </button>
-            <button onClick={() => window.location.href = '/about'} className="comic-button bg-white text-black">
+              <button onClick={() => window.location.href = '/articles'} className="comic-button">
+                探索更多 <ArrowRight className="inline ml-2" />
+              </button>
+              <button onClick={() => window.location.href = '/about'} className="comic-button bg-white text-black">
               我的档案
             </button>
           </div>

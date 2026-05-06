@@ -20,8 +20,9 @@ interface Article {
 
 const colors = ['bg-comic-blue', 'bg-comic-red', 'bg-comic-yellow', 'bg-zaun-green', 'bg-zaun-purple'];
 
-export default function ArticlesView({ category, titleEn, titleZh, subtitle, icon: Icon }: { category: string, titleEn: string, titleZh: string, subtitle: string, icon: any }) {
+export default function ArticlesView() {
   const { setNavbarHidden } = useContext(NavbarContext);
+  const [activeTab, setActiveTab] = useState<'all' | 'news' | 'policies'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
   const [selectedArticle, setSelectedArticle] = useState<Article & { color?: string } | null>(null);
@@ -39,9 +40,13 @@ export default function ArticlesView({ category, titleEn, titleZh, subtitle, ico
   useEffect(() => {
     const fetchArticles = async () => {
       try {
+        let categoryParam = '';
+        if (activeTab === 'news') categoryParam = '&category=资讯';
+        if (activeTab === 'policies') categoryParam = '&category=政策';
+        
         const searchParam = searchQuery ? `&search=${encodeURIComponent(searchQuery)}` : '';
-        const res = await axios.get(`/api/articles?category=${encodeURIComponent(category)}${searchParam}`);
-        // Assign a random or sequential color to each article for UI styling
+        const res = await axios.get(`/api/articles?${categoryParam}${searchParam}`);
+        
         const data = res.data.map((item: Article, index: number) => ({
           ...item,
           color: colors[index % colors.length]
@@ -52,13 +57,12 @@ export default function ArticlesView({ category, titleEn, titleZh, subtitle, ico
       }
     };
     
-    // We can debounce the fetch if needed, but for now simple fetch on change is fine
     const delayDebounceFn = setTimeout(() => {
       fetchArticles();
     }, 300);
 
     return () => clearTimeout(delayDebounceFn);
-  }, [category, searchQuery]);
+  }, [activeTab, searchQuery]);
 
   // Sorting logic (filtering is now done on backend)
   const filteredAndSortedArticles = useMemo(() => {
@@ -75,7 +79,7 @@ export default function ArticlesView({ category, titleEn, titleZh, subtitle, ico
     <section id="articles" className="py-24 px-6 bg-paper border-y-8 border-black relative overflow-hidden min-h-screen">
       {/* Background decoration */}
       <div className="absolute top-0 right-0 p-10 opacity-5 rotate-12 pointer-events-none">
-        <Icon className="w-64 h-64" />
+        <Newspaper className="w-64 h-64" />
       </div>
       <div className="absolute bottom-20 left-10 onomatopoeia text-comic-blue text-6xl -rotate-12 opacity-30 select-none z-0">
         READ!
@@ -90,10 +94,10 @@ export default function ArticlesView({ category, titleEn, titleZh, subtitle, ico
               animate={{ x: 0, opacity: 1 }}
               className="text-7xl md:text-9xl font-comic mb-4 uppercase italic flex flex-wrap"
             >
-              {titleEn.substring(0, titleEn.length - 4)}<span className="text-comic-red">{titleEn.slice(-4)}</span>
+              INDUSTRY<span className="text-comic-red">NEWS</span>
             </motion.h2>
             <div className="bg-black text-white px-4 py-1 inline-block rotate-[-1deg] font-marker text-xl">
-              "{subtitle}"
+              "前沿动态、政策法规"
             </div>
           </div>
 
@@ -103,6 +107,27 @@ export default function ArticlesView({ category, titleEn, titleZh, subtitle, ico
             animate={{ x: 0, opacity: 1 }}
             className="flex flex-col sm:flex-row gap-4 w-full md:w-auto"
           >
+            <div className="flex gap-2 mr-4">
+              <button 
+                onClick={() => setActiveTab('all')}
+                className={cn("px-4 py-2 border-4 border-black font-black uppercase transition-transform", activeTab === 'all' ? "bg-comic-blue text-white translate-y-1" : "bg-white text-black hover:-translate-y-1")}
+              >
+                全部
+              </button>
+              <button 
+                onClick={() => setActiveTab('news')}
+                className={cn("px-4 py-2 border-4 border-black font-black uppercase transition-transform", activeTab === 'news' ? "bg-comic-yellow text-black translate-y-1" : "bg-white text-black hover:-translate-y-1")}
+              >
+                资讯
+              </button>
+              <button 
+                onClick={() => setActiveTab('policies')}
+                className={cn("px-4 py-2 border-4 border-black font-black uppercase transition-transform", activeTab === 'policies' ? "bg-zaun-green text-black translate-y-1" : "bg-white text-black hover:-translate-y-1")}
+              >
+                政策
+              </button>
+            </div>
+
             <div className="relative group flex-grow md:w-64">
               <div className="absolute inset-0 bg-black translate-x-1 translate-y-1" />
               <div className="relative flex items-center bg-white border-4 border-black p-2 group-focus-within:bg-comic-yellow/20 transition-colors">
