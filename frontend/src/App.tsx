@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { HelmetProvider } from 'react-helmet-async';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import About from './components/About';
@@ -109,6 +110,7 @@ function MainLayout() {
 
 export default function App() {
   return (
+    <HelmetProvider>
     <Router>
       <Routes>
         <Route path="/admin" element={<Login />} />
@@ -116,5 +118,6 @@ export default function App() {
         <Route path="/*" element={<MainLayout />} />
       </Routes>
     </Router>
+    </HelmetProvider>
   );
 }

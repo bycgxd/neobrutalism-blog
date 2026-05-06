@@ -4,6 +4,7 @@ import { Calendar, Tag, ChevronRight, Sprout, X, ChevronLeft } from 'lucide-reac
 import { cn } from '@/src/lib/utils';
 import axios from 'axios';
 import { NavbarContext } from '../App';
+import { Helmet } from 'react-helmet-async';
 
 interface GardenNote {
   id: number;
@@ -67,6 +68,12 @@ export default function DigitalGarden() {
 
   return (
     <section id="garden" className="py-24 px-6 bg-paper relative overflow-hidden min-h-screen">
+      <Helmet>
+        <title>数字花园 | 柏C的空间站</title>
+        <meta name="description" content="数字花园 — 零散的思考和笔记。" />
+        <meta property="og:title" content="数字花园 | 柏C的空间站" />
+        <meta property="og:description" content="数字花园 — 零散的思考和笔记。" />
+      </Helmet>
       <div className="max-w-6xl mx-auto relative">
         <div className="flex flex-col md:flex-row items-baseline gap-10 mb-20">
           <h2 className="text-7xl md:text-9xl font-comic italic leading-tight">

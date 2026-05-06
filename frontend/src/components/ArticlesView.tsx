@@ -5,6 +5,7 @@ import { cn } from '@/src/lib/utils';
 import axios from 'axios';
 import { NavbarContext } from '../App';
 import { trackPageView } from '@/src/lib/tracker';
+import { Helmet } from 'react-helmet-async';
 
 interface Article {
   id: number;
@@ -85,6 +86,13 @@ export default function ArticlesView() {
 
   return (
     <section id="articles" className="py-24 px-6 bg-paper border-y-8 border-black relative overflow-hidden min-h-screen">
+      <Helmet>
+        <title>{selectedArticle ? `${selectedArticle.title} | 柏C的空间站` : '行业资讯 | 柏C的空间站'}</title>
+        <meta name="description" content={selectedArticle ? selectedArticle.summary : '前沿动态、政策法规 — 行业资讯汇总。'} />
+        <meta property="og:title" content={selectedArticle ? selectedArticle.title : '行业资讯 | 柏C的空间站'} />
+        <meta property="og:description" content={selectedArticle ? selectedArticle.summary : '前沿动态、政策法规 — 行业资讯汇总。'} />
+        <meta property="og:type" content="article" />
+      </Helmet>
       {/* Background decoration */}
       <div className="absolute top-0 right-0 p-10 opacity-5 rotate-12 pointer-events-none">
         <Newspaper className="w-64 h-64" />

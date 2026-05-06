@@ -1,9 +1,16 @@
 import { motion } from 'motion/react';
 import { ArrowRight, Github, Twitter, Linkedin } from 'lucide-react';
+import { Helmet } from 'react-helmet-async';
 
 export default function Hero() {
   return (
     <section id="home" className="min-h-screen pt-32 pb-20 flex flex-col items-center justify-center px-6 overflow-hidden">
+      <Helmet>
+        <title>柏C的空间站</title>
+        <meta name="description" content="Creative Developer — 个人博客，分享技术、设计和思考。" />
+        <meta property="og:title" content="柏C的空间站" />
+        <meta property="og:description" content="Creative Developer — 个人博客，分享技术、设计和思考。" />
+      </Helmet>
       <div className="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
         <motion.div
           initial={{ x: -100, opacity: 0 }}

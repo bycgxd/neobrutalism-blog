@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/src/lib/utils';
+import { Helmet } from 'react-helmet-async';
 import { Briefcase, GraduationCap, Baby, Rocket, Award, FlaskConical, Sparkles, Star, Zap, Lock, KeyRound } from 'lucide-react';
 
 const timelineEvents = [
@@ -135,6 +136,12 @@ export default function About() {
 
   return (
     <section id="about" className="pt-40 pb-24 px-6 bg-paper border-y-8 border-black relative overflow-hidden">
+      <Helmet>
+        <title>关于我 | 柏C的空间站</title>
+        <meta name="description" content="关于柏C — 经历、技能与兴趣。" />
+        <meta property="og:title" content="关于我 | 柏C的空间站" />
+        <meta property="og:description" content="关于柏C — 经历、技能与兴趣。" />
+      </Helmet>
       {/* Decorative Onomatopoeia */}
       <div className="absolute top-20 right-10 onomatopoeia text-comic-blue text-5xl rotate-12 opacity-50 select-none z-0">
         TIME!

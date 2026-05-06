@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/src/lib/utils';
+import { Helmet } from 'react-helmet-async';
 import { 
   Terminal, 
   Figma, 
@@ -129,6 +130,12 @@ function NumberConverter() {
 export default function Toolbox() {
   return (
     <section id="toolbox" className="py-24 px-6 relative overflow-hidden">
+      <Helmet>
+        <title>工具箱 | 柏C的空间站</title>
+        <meta name="description" content="实用在线工具集合。" />
+        <meta property="og:title" content="工具箱 | 柏C的空间站" />
+        <meta property="og:description" content="实用在线工具集合。" />
+      </Helmet>
        {/* Background Halftone Overlay */}
       <div className="absolute inset-0 halftone-bg opacity-5 text-comic-blue pointer-events-none" />
 
