@@ -7,6 +7,7 @@ import ArticlesView from './components/ArticlesView';
 import DigitalGarden from './components/DigitalGarden';
 import Login from './components/Admin/Login';
 import Dashboard from './components/Admin/Dashboard';
+import PageTracker from './components/PageTracker';
 import { motion, AnimatePresence } from 'motion/react';
 import { ReactNode, useEffect, useState, createContext, useContext } from 'react';
 import { Newspaper, FileText } from 'lucide-react';
@@ -88,6 +89,7 @@ function MainLayout() {
   return (
     <NavbarContext.Provider value={{ isNavbarHidden, setNavbarHidden }}>
       <ScrollToTop />
+      <PageTracker />
       <div className="relative selection:bg-comic-red selection:text-white min-h-screen flex flex-col paper-texture">
         {/* Gritty Paper Overlay */}
         <div className="fixed inset-0 pointer-events-none z-50 opacity-10 paper-texture" />

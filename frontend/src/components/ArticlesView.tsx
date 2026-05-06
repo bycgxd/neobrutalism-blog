@@ -4,6 +4,7 @@ import { Newspaper, Search, ArrowRight, X, Calendar, ArrowUpDown, Download, Spar
 import { cn } from '@/src/lib/utils';
 import axios from 'axios';
 import { NavbarContext } from '../App';
+import { trackPageView } from '@/src/lib/tracker';
 
 interface Article {
   id: number;
@@ -31,6 +32,7 @@ export default function ArticlesView() {
   useEffect(() => {
     if (selectedArticle) {
       setNavbarHidden(true);
+      trackPageView('/articles', selectedArticle.id);
     } else {
       setNavbarHidden(false);
     }

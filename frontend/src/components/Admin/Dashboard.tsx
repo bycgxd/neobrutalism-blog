@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Edit2, Trash2, LogOut, Eye, EyeOff, Paperclip, LayoutDashboard, Sprout, CheckSquare, Square } from 'lucide-react';
+import { Plus, Edit2, Trash2, LogOut, Eye, EyeOff, Paperclip, LayoutDashboard, Sprout, CheckSquare, Square, BarChart3 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/src/lib/utils';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
+import Analytics from './Analytics';
 
 interface Article {
   id: number;
@@ -40,7 +41,7 @@ const quillModules = {
 };
 
 export default function Dashboard() {
-  const [activeTab, setActiveTab] = useState<'articles' | 'garden'>('articles');
+  const [activeTab, setActiveTab] = useState<'articles' | 'garden' | 'analytics'>('articles');
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<'all' | '资讯' | '政策'>('all');
   
@@ -67,7 +68,7 @@ export default function Dashboard() {
     }
     if (activeTab === 'articles') {
       fetchArticles();
-    } else {
+    } else if (activeTab === 'garden') {
       fetchGardenNotes();
     }
   }, [token, navigate, activeTab]);
@@ -379,6 +380,12 @@ export default function Dashboard() {
             >
               <Sprout className="w-5 h-5" /> 数字花园管理
             </button>
+            <button
+              onClick={() => { setActiveTab('analytics'); setIsEditing(false); }}
+              className={cn("comic-button flex items-center gap-2", activeTab === 'analytics' ? "bg-comic-red text-white" : "bg-white text-black")}
+            >
+              <BarChart3 className="w-5 h-5" /> 数据统计
+            </button>
           </div>
 
           <button onClick={handleLogout} className="comic-button bg-black text-white flex items-center gap-2">
@@ -418,7 +425,7 @@ export default function Dashboard() {
           </div>
         )}
 
-        {!isEditing ? (
+        {!isEditing && activeTab !== 'analytics' && (
           <div className="comic-panel bg-white p-8">
             <div className="flex justify-between items-center mb-8 border-b-4 border-black pb-4 flex-wrap gap-4">
               <div className="flex items-center gap-4">
@@ -524,7 +531,8 @@ export default function Dashboard() {
               )}
             </div>
           </div>
-        ) : (
+        )}
+        {isEditing && (
           <div className="comic-panel bg-white p-8">
             <div className="flex justify-between items-center mb-8 border-b-4 border-black pb-4">
               <h2 className="text-3xl font-black">
@@ -733,6 +741,15 @@ export default function Dashboard() {
                 </div>
               </form>
             )}
+          </div>
+        )}
+
+        {activeTab === 'analytics' && (
+          <div className="comic-panel bg-white p-8">
+            <div className="flex justify-between items-center mb-8 border-b-4 border-black pb-4">
+              <h2 className="text-3xl font-black">数据统计</h2>
+            </div>
+            <Analytics />
           </div>
         )}
       </div>
