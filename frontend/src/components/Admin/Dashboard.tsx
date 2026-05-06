@@ -45,6 +45,7 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<'articles' | 'garden' | 'analytics'>('articles');
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<'all' | '资讯' | '政策'>('all');
+  const [articleSort, setArticleSort] = useState<'date' | 'createdAt'>('date');
   
   const [articles, setArticles] = useState<Article[]>([]);
   const [gardenNotes, setGardenNotes] = useState<GardenNote[]>([]);
@@ -80,7 +81,7 @@ export default function Dashboard() {
     } else if (activeTab === 'garden') {
       fetchGardenNotes();
     }
-  }, [token, navigate, activeTab, articlePage, gardenPage, searchQuery, categoryFilter]);
+  }, [token, navigate, activeTab, articlePage, gardenPage, searchQuery, categoryFilter, articleSort]);
 
   const fetchArticles = async () => {
     try {
@@ -88,6 +89,7 @@ export default function Dashboard() {
       params.set('admin', 'true');
       params.set('page', String(articlePage));
       params.set('limit', '10');
+      params.set('sort', articleSort);
       if (searchQuery) params.set('search', searchQuery);
       if (categoryFilter === '资讯' || categoryFilter === '政策') params.set('category', categoryFilter);
       const res = await axios.get(`/api/articles?${params.toString()}`);
@@ -446,6 +448,12 @@ export default function Dashboard() {
               onChange={e => { setSearchQuery(e.target.value); setArticlePage(1); }}
               className="flex-1 border-4 border-black p-3 font-bold focus:outline-none focus:ring-4 focus:ring-comic-blue"
             />
+            <button
+              onClick={() => { setArticleSort(s => s === 'date' ? 'createdAt' : 'date'); setArticlePage(1); }}
+              className={cn("px-4 py-2 border-4 border-black font-black uppercase transition-transform whitespace-nowrap", articleSort === 'createdAt' ? "bg-black text-white translate-y-1" : "bg-white text-black hover:-translate-y-1")}
+            >
+              {articleSort === 'date' ? '按发布时间' : '按导入时间'}
+            </button>
           </div>
         )}
 
@@ -528,6 +536,11 @@ export default function Dashboard() {
                           {activeTab === 'articles' ? item.category : item.tags}
                         </span>
                         <span>{item.date}</span>
+                        {activeTab === 'articles' && item.createdAt && (
+                          <span className="text-xs text-gray-400">
+                            导入: {new Date(item.createdAt).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>

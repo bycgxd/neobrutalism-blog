@@ -93,6 +93,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     const page = parseInt(req.query.page as string) || 0;
     const limit = parseInt(req.query.limit as string) || 10;
     const order = (req.query.order as string) === 'asc' ? 'ASC' : 'DESC';
+    const sortBy = (req.query.sort as string) === 'createdAt' ? 'createdAt' : 'date';
 
     const whereClause: any = isAdmin ? {} : { isHidden: false };
 
@@ -111,7 +112,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       const total = await Article.count({ where: whereClause });
       const articles = await Article.findAll({
         where: whereClause,
-        order: [['date', order]],
+        order: [[sortBy, order]],
         limit,
         offset: (page - 1) * limit,
       });
@@ -121,7 +122,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
 
     const articles = await Article.findAll({
       where: whereClause,
-      order: [['date', order]],
+      order: [[sortBy, order]],
     });
     res.json(articles);
   } catch (error) {
