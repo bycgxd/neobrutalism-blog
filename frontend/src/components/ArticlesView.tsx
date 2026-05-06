@@ -1,6 +1,6 @@
 import { useState, useEffect, useContext } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Newspaper, Search, ArrowRight, X, Calendar, ArrowUpDown, Download, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Newspaper, Search, ArrowRight, X, Calendar, ArrowUpDown, Download, Sparkles, ChevronLeft, ChevronRight, Share2, Check } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
 import axios from 'axios';
 import { NavbarContext } from '../App';
@@ -33,6 +33,22 @@ export default function ArticlesView() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [jumpInput, setJumpInput] = useState('');
+  const [copied, setCopied] = useState(false);
+
+  const handleShare = async () => {
+    const url = `${window.location.origin}/articles`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: selectedArticle?.title, text: selectedArticle?.summary, url });
+      } catch {}
+    } else {
+      try {
+        await navigator.clipboard.writeText(url);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch {}
+    }
+  };
 
   useEffect(() => {
     if (selectedArticle) {
@@ -311,12 +327,21 @@ export default function ArticlesView() {
                 <span className={cn("font-comic text-xl italic uppercase", selectedArticle.color === 'bg-comic-yellow' ? 'text-black' : 'text-white')}>
                   {selectedArticle.category} // {selectedArticle.date}
                 </span>
-                <button 
-                  onClick={() => setSelectedArticle(null)}
-                  className="w-12 h-12 bg-white border-4 border-black flex items-center justify-center hover:bg-comic-red hover:text-white transition-colors shadow-comic-sm rotate-3 hover:rotate-0"
-                >
-                  <X className="w-8 h-8" />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleShare}
+                    className="w-12 h-12 bg-white border-4 border-black flex items-center justify-center hover:bg-comic-yellow hover:text-black transition-colors shadow-comic-sm -rotate-2 hover:rotate-0 relative"
+                    title="分享"
+                  >
+                    {copied ? <Check className="w-6 h-6" /> : <Share2 className="w-6 h-6" />}
+                  </button>
+                  <button
+                    onClick={() => setSelectedArticle(null)}
+                    className="w-12 h-12 bg-white border-4 border-black flex items-center justify-center hover:bg-comic-red hover:text-white transition-colors shadow-comic-sm rotate-3 hover:rotate-0"
+                  >
+                    <X className="w-8 h-8" />
+                  </button>
+                </div>
               </div>
               
               {/* Modal Content (Scrollable) */}
