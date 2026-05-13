@@ -103,9 +103,9 @@ export default function ArticlesView() {
   return (
     <section id="articles" className="py-24 px-6 bg-paper border-y-8 border-black relative overflow-hidden min-h-screen">
       <Helmet>
-        <title>{selectedArticle ? `${selectedArticle.title} | 柏C的空间站` : '行业资讯 | 柏C的空间站'}</title>
+        <title>{selectedArticle ? `${selectedArticle.title} | 柏青树` : '行业资讯 | 柏青树'}</title>
         <meta name="description" content={selectedArticle ? selectedArticle.summary : '前沿动态、政策法规 — 行业资讯汇总。'} />
-        <meta property="og:title" content={selectedArticle ? selectedArticle.title : '行业资讯 | 柏C的空间站'} />
+        <meta property="og:title" content={selectedArticle ? selectedArticle.title : '行业资讯 | 柏青树'} />
         <meta property="og:description" content={selectedArticle ? selectedArticle.summary : '前沿动态、政策法规 — 行业资讯汇总。'} />
         <meta property="og:type" content="article" />
       </Helmet>

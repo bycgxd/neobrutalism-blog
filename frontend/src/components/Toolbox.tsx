@@ -131,9 +131,9 @@ export default function Toolbox() {
   return (
     <section id="toolbox" className="py-24 px-6 relative overflow-hidden">
       <Helmet>
-        <title>工具箱 | 柏C的空间站</title>
+        <title>工具箱 | 柏青树</title>
         <meta name="description" content="实用在线工具集合。" />
-        <meta property="og:title" content="工具箱 | 柏C的空间站" />
+        <meta property="og:title" content="工具箱 | 柏青树" />
         <meta property="og:description" content="实用在线工具集合。" />
       </Helmet>
        {/* Background Halftone Overlay */}

@@ -69,9 +69,9 @@ export default function DigitalGarden() {
   return (
     <section id="garden" className="py-24 px-6 bg-paper relative overflow-hidden min-h-screen">
       <Helmet>
-        <title>数字花园 | 柏C的空间站</title>
+        <title>数字花园 | 柏青树</title>
         <meta name="description" content="数字花园 — 零散的思考和笔记。" />
-        <meta property="og:title" content="数字花园 | 柏C的空间站" />
+        <meta property="og:title" content="数字花园 | 柏青树" />
         <meta property="og:description" content="数字花园 — 零散的思考和笔记。" />
       </Helmet>
       <div className="max-w-6xl mx-auto relative">

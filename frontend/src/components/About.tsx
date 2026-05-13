@@ -137,10 +137,10 @@ export default function About() {
   return (
     <section id="about" className="pt-40 pb-24 px-6 bg-paper border-y-8 border-black relative overflow-hidden">
       <Helmet>
-        <title>关于我 | 柏C的空间站</title>
-        <meta name="description" content="关于柏C — 经历、技能与兴趣。" />
-        <meta property="og:title" content="关于我 | 柏C的空间站" />
-        <meta property="og:description" content="关于柏C — 经历、技能与兴趣。" />
+        <title>关于我 | 柏青树</title>
+        <meta name="description" content="关于柏青树 — 经历、技能与兴趣。" />
+        <meta property="og:title" content="关于我 | 柏青树" />
+        <meta property="og:description" content="关于柏青树 — 经历、技能与兴趣。" />
       </Helmet>
       {/* Decorative Onomatopoeia */}
       <div className="absolute top-20 right-10 onomatopoeia text-comic-blue text-5xl rotate-12 opacity-50 select-none z-0">
@@ -201,7 +201,7 @@ export default function About() {
              viewport={{ once: true }}
              className="inline-block bg-black text-white px-6 py-2 font-comic text-2xl uppercase italic rotate-[-1deg] shadow-comic"
            >
-              "柏C的进化之路"
+              "柏青树的进化之路"
            </motion.div>
         </div>
 

@@ -31,7 +31,7 @@ function Footer() {
     <footer className="bg-black text-white py-12 px-6">
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
         <div>
-          <h2 className="text-3xl font-black mb-2">柏C的博客</h2>
+          <h2 className="text-3xl font-black mb-2">柏青树</h2>
           <p className="text-gray-400 font-bold">Built with Neobrutalism, React & Passion.</p>
         </div>
       </div>
