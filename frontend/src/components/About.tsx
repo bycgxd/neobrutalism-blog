@@ -54,7 +54,7 @@ export default function About() {
 
   const handleAuth = (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === '王旭东') {
+    if (password === '王旭东1') {
       setIsAuthenticated(true);
       setError(false);
     } else {
